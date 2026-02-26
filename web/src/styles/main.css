@@ -1,0 +1,84 @@
+:root {
+  --grape-primary: #6f2da8;
+  --grape-secondary: #9b4dcb;
+  --grape-accent: #4caf50;
+  --grape-bg: #f8f5ff;
+  --grape-text: #2d2d2d;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--grape-bg);
+  color: var(--grape-text);
+  line-height: 1.6;
+}
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Grape theme overrides */
+.el-button--primary {
+  --el-button-bg-color: var(--grape-primary);
+  --el-button-border-color: var(--grape-primary);
+  --el-button-hover-bg-color: var(--grape-secondary);
+  --el-button-hover-border-color: var(--grape-secondary);
+}
+
+.el-link--primary {
+  --el-link-text-color: var(--grape-primary);
+  --el-link-hover-text-color: var(--grape-secondary);
+}
+
+/* Card styles */
+.package-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.package-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(111, 45, 168, 0.15);
+}
+
+/* Code block */
+.code-block {
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'Fira Code', 'Monaco', monospace;
+  font-size: 14px;
+  overflow-x: auto;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}

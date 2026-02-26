@@ -1,0 +1,91 @@
+Grape Private Registry Community License
+Version 1.2
+
+Copyright (c) 2024 Grape Registry Project
+
+1. DEFINITIONS
+
+"Software" means the original source code and documentation
+of the Grape Registry Project, including any Derivative Works.
+
+"Derivative Work" means any modification, adaptation,
+enhancement, or other work derived from the Software.
+
+"Commercial Activities" means any use of the Software
+(or a Derivative Work) to derive revenue, compensation,
+or other consideration.
+
+2. LICENSE GRANT
+
+Subject to the terms of this License, the Licensor grants
+a worldwide, royalty-free, non-exclusive license to use,
+modify, and deploy the Software.
+
+3. PERMITTED USE
+
+You may:
+
+• Use the Software for personal purposes;
+• Deploy and use the Software within an organization for internal business operations;
+• Provide the Software or services based on it to third parties free of charge;
+• Create Derivative Works for non-commercial purposes.
+
+4. RESTRICTED USE — COMMERCIAL LICENSE REQUIRED
+
+You may NOT engage in Commercial Activities without
+a separate Commercial License.
+
+Commercial Activities include but are not limited to:
+
+1. Charging fees for access to the Software or its functionality
+   (SaaS, hosting, subscription, advertising-supported, etc.);
+2. Selling or licensing the Software or Derivative Works;
+3. Providing paid consulting, support, hosting, customization,
+   maintenance, or other services related to the Software;
+4. Using the Software or Derivative Works as part of a paid
+   commercial offering;
+5. Selling modified versions or providing paid services
+   based on Derivative Works.
+
+5) ATTRIBUTION AND LICENSE INTEGRITY
+
+You must not:
+
+• Remove or alter the original copyright notices;
+• Remove, replace, or modify this License text;
+• Misrepresent the origin of the Software;
+• Claim authorship of the original Software.
+
+This requirement applies to the Software and all Derivative Works.
+
+6. REDISTRIBUTION
+
+Redistributions must retain:
+
+• All copyright notices;
+• This License in its entirety.
+
+7. TRADEMARKS
+
+This License does not grant rights to use the Licensor’s trademarks,
+including “Grape” or associated logos.
+
+8. DISCLAIMER
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+
+9. LIMITATION OF LIABILITY
+
+IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR DAMAGES ARISING FROM USE.
+
+10. GOVERNING LAW
+
+This License shall be governed by the laws of the jurisdiction
+in which the Licensor resides.
+
+11. COMMERCIAL LICENSING
+
+For Commercial Licensing, contact:
+https://github.com/graperegistry/grape
+
+This is a source-available license and NOT an OSI-approved open source license.
