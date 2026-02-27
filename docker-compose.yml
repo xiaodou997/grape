@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  grape:
+    build: .
+    image: grape-registry:latest
+    container_name: grape
+    restart: unless-stopped
+    ports:
+      - "4873:4873"
+    volumes:
+      - grape-data:/data
+      - ./configs/config.yaml:/app/configs/config.yaml:ro
+    environment:
+      - GIN_MODE=release
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4873/-/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  grape-data:
+    driver: local

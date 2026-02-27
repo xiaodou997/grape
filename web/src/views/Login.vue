@@ -79,16 +79,26 @@ const handleLogin = async () => {
     const success = await userStore.login(form.username, form.password)
     if (success) {
       ElMessage.success('登录成功')
-      const redirect = route.query.redirect as string || '/'
+      const redirect = getSafeRedirect(route.query.redirect as string)
       router.push(redirect)
     } else {
       ElMessage.error('用户名或密码错误')
     }
-  } catch (error) {
+  } catch {
     ElMessage.error('登录失败，请稍后重试')
   } finally {
     loading.value = false
   }
+}
+
+// 获取安全的重定向路径，防止开放重定向攻击
+function getSafeRedirect(redirect: string | undefined): string {
+  if (!redirect) return '/'
+  // 只允许以 / 开头且不以 // 开头的相对路径
+  if (redirect.startsWith('/') && !redirect.startsWith('//')) {
+    return redirect
+  }
+  return '/'
 }
 </script>
 

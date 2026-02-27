@@ -13,6 +13,9 @@
             <el-menu-item index="packages">
               <router-link to="/packages">包列表</router-link>
             </el-menu-item>
+            <el-menu-item index="guide">
+              <router-link to="/guide">使用指南</router-link>
+            </el-menu-item>
             <el-menu-item index="admin">
               <router-link to="/admin">管理后台</router-link>
             </el-menu-item>

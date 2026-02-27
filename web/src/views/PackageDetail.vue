@@ -88,6 +88,35 @@
         <template #header>
           <span>管理操作</span>
         </template>
+        
+        <!-- Owner 管理（仅 admin） -->
+        <div v-if="userStore.role === 'admin'" class="owner-management">
+          <h4>包所有者</h4>
+          <div class="owners-list" v-loading="ownersLoading">
+            <el-tag 
+              v-for="owner in owners" 
+              :key="owner.username"
+              closable
+              @close="removeOwner(owner.username)"
+              style="margin-right: 8px; margin-bottom: 8px;"
+            >
+              {{ owner.username }}
+            </el-tag>
+            <el-tag v-if="owners.length === 0" type="info">无限制（任何 developer 可发布）</el-tag>
+          </div>
+          <div class="add-owner" style="margin-top: 12px;">
+            <el-input 
+              v-model="newOwnerUsername" 
+              placeholder="输入用户名" 
+              style="width: 200px; margin-right: 8px;"
+              @keyup.enter="addOwner"
+            />
+            <el-button type="primary" @click="addOwner" :loading="addingOwner">添加所有者</el-button>
+          </div>
+        </div>
+        
+        <el-divider v-if="userStore.role === 'admin'" />
+        
         <el-button type="danger" @click="handleDelete">
           删除此包
         </el-button>
@@ -103,8 +132,12 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { CopyDocument } from '@element-plus/icons-vue'
-import { packageApi } from '@/api'
+import { marked } from 'marked'
+import { packageApi, ownerApi } from '@/api'
 import { useUserStore } from '@/stores/user'
+
+// 配置 marked：开启 gfm（GitHub Flavored Markdown）和换行支持
+marked.setOptions({ gfm: true, breaks: true })
 
 const route = useRoute()
 const router = useRouter()
@@ -114,6 +147,12 @@ const loading = ref(false)
 const packageData = ref<any>(null)
 const selectedVersion = ref('')
 const readmeHtml = ref('')
+
+// Owner 管理
+const owners = ref<{ username: string; email: string }[]>([])
+const ownersLoading = ref(false)
+const newOwnerUsername = ref('')
+const addingOwner = ref(false)
 
 const currentVersion = computed(() => {
   if (!packageData.value?.versions || !selectedVersion.value) return null
@@ -139,9 +178,15 @@ const loadPackage = async () => {
       }
     }
 
-    readmeHtml.value = packageData.value.readme || '暂无 README'
+    const rawReadme = packageData.value.readme || ''
+    readmeHtml.value = rawReadme
+      ? (marked.parse(rawReadme) as string)
+      : '<p style="color:#999">暂无 README</p>'
+    
+    // 加载 owner 列表
+    loadOwners()
   } catch (error) {
-    console.error('Failed to load package:', error)
+    // 加载失败，错误已通过 ElMessage 通知用户
     ElMessage.error('加载包失败')
   } finally {
     loading.value = false
@@ -181,6 +226,55 @@ const handleDelete = async () => {
   }
 }
 
+// Owner 管理
+const loadOwners = async () => {
+  if (userStore.role !== 'admin' || !packageData.value) return
+  
+  ownersLoading.value = true
+  try {
+    const res = await ownerApi.list(packageData.value.name)
+    owners.value = res.data.owners || []
+  } catch {
+    // 忽略错误
+  } finally {
+    ownersLoading.value = false
+  }
+}
+
+const addOwner = async () => {
+  if (!newOwnerUsername.value.trim()) return
+  
+  addingOwner.value = true
+  try {
+    await ownerApi.add(packageData.value.name, newOwnerUsername.value.trim())
+    ElMessage.success('已添加所有者')
+    newOwnerUsername.value = ''
+    loadOwners()
+  } catch (error: any) {
+    ElMessage.error(error.response?.data?.error || '添加失败')
+  } finally {
+    addingOwner.value = false
+  }
+}
+
+const removeOwner = async (username: string) => {
+  try {
+    await ElMessageBox.confirm(`确定要移除 ${username} 的所有者权限吗？`, '确认', {
+      confirmButtonText: '移除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+    
+    await ownerApi.remove(packageData.value.name, username)
+    ElMessage.success('已移除所有者')
+    loadOwners()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.response?.data?.error || '移除失败')
+    }
+  }
+}
+
 onMounted(() => {
   loadPackage()
 })
@@ -210,6 +304,20 @@ watch(() => route.params.name, () => {
   font-size: 28px;
   color: var(--grape-primary);
   margin: 0;
+}
+
+.owner-management {
+  margin-bottom: 16px;
+}
+
+.owner-management h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #606266;
+}
+
+.owners-list {
+  min-height: 32px;
 }
 
 .package-description {
@@ -258,8 +366,9 @@ watch(() => route.params.name, () => {
 }
 
 .readme-content {
-  max-height: 500px;
+  max-height: 600px;
   overflow-y: auto;
+  line-height: 1.7;
 }
 
 .readme-content :deep(pre) {
@@ -268,23 +377,96 @@ watch(() => route.params.name, () => {
   padding: 16px;
   border-radius: 8px;
   overflow-x: auto;
+  margin: 12px 0;
+}
+
+.readme-content :deep(pre code) {
+  background-color: transparent;
+  padding: 0;
+  font-size: 13px;
 }
 
 .readme-content :deep(code) {
-  background-color: #f5f5f5;
+  background-color: #f0f0f0;
   padding: 2px 6px;
   border-radius: 4px;
-  font-family: 'Fira Code', monospace;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 13px;
+  color: #c7254e;
 }
 
-.readme-content :deep(h1),
-.readme-content :deep(h2),
-.readme-content :deep(h3) {
+.readme-content :deep(h1) {
+  font-size: 22px;
   margin-top: 24px;
   margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.readme-content :deep(h2) {
+  font-size: 18px;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #eee;
+}
+
+.readme-content :deep(h3) {
+  font-size: 16px;
+  margin-top: 16px;
+  margin-bottom: 8px;
 }
 
 .readme-content :deep(p) {
   margin-bottom: 12px;
+}
+
+.readme-content :deep(ul),
+.readme-content :deep(ol) {
+  padding-left: 24px;
+  margin-bottom: 12px;
+}
+
+.readme-content :deep(li) {
+  margin-bottom: 4px;
+}
+
+.readme-content :deep(blockquote) {
+  border-left: 4px solid #ddd;
+  padding-left: 16px;
+  margin: 12px 0;
+  color: #666;
+}
+
+.readme-content :deep(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.readme-content :deep(th),
+.readme-content :deep(td) {
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.readme-content :deep(th) {
+  background-color: #f5f5f5;
+  font-weight: 600;
+}
+
+.readme-content :deep(a) {
+  color: var(--grape-primary, #409eff);
+  text-decoration: none;
+}
+
+.readme-content :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.readme-content :deep(img) {
+  max-width: 100%;
+  border-radius: 4px;
 }
 </style>

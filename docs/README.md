@@ -1,225 +1,189 @@
-# Grape 开发文档
+# Grape 文档索引
 
-> 🍇 Grape - 轻盈如风的企业级私有 npm 仓库
+欢迎来到 Grape 文档中心！本文档索引帮助您快速找到所需信息。
 
-## 目录
+## 📚 文档导航
 
-- [项目概述](#项目概述)
-- [技术架构](#技术架构)
-- [开发路线图](#开发路线图)
-- [快速开始](#快速开始)
-- [模块说明](#模块说明)
+### 入门指南
 
----
+| 文档 | 说明 | 适合人群 |
+|------|------|----------|
+| [README](../README.md) | 项目介绍、快速开始、特性说明 | 所有用户 |
+| [使用指南](USAGE.md) | 包管理器配置和使用详解 | 开发者 |
+| [配置指南](../configs/README.md) | 配置文件详细说明 | 运维/开发者 |
 
-## 项目概述
+### 开发文档
 
-### 愿景
+| 文档 | 说明 | 适合人群 |
+|------|------|----------|
+| [API 文档](API.md) | 完整的 API 参考 | 开发者 |
+| [开发文档](DEVELOPMENT.md) | 开发环境搭建、代码结构、贡献指南 | 贡献者 |
+| [Webhook 文档](WEBHOOKS.md) | Webhook 配置和使用 | 开发者/运维 |
 
-Grape 旨在打造一个**极致轻量、企业就绪**的私有 npm 仓库。用 Go 重写，在保持完美兼容 npm/yarn/pnpm/bun 客户端的同时，提供比 Verdaccio 更强大的权限控制、更现代化的 Web 界面、更低的资源占用。
+### 运维文档
 
-### 核心特性
-
-| 特性 | 说明 |
-|------|------|
-| 单一二进制 | 无需安装 Node.js，下载即用 |
-| 低内存占用 | < 5MB，远低于 Verdaccio (~20MB) |
-| 智能代理 | 自动缓存公共包，加速团队开发 |
-| 权限控制 | RBAC 模型，精细化权限管理 |
-| 现代化 UI | Vue 3 + Element Plus |
-
-### 与 Verdaccio 对比
-
-| 维度 | Grape | Verdaccio |
-|------|-------|-----------|
-| 技术栈 | Go | Node.js |
-| 内存占用 | < 5MB | ~ 20MB |
-| 并发能力 | 高 (goroutine) | 中 (单线程) |
-| 权限模型 | RBAC + Web 管理 | 简单 ACL + 配置文件 |
-| Web UI | Vue 3 + Element Plus | 内置简单 UI |
+| 文档 | 说明 | 适合人群 |
+|------|------|----------|
+| [部署指南](DEPLOYMENT.md) | 各种环境部署指南（单机、Docker、K8s） | 运维工程师 |
+| [配置指南](../configs/README.md) | 配置文件详解、最佳实践 | 运维工程师 |
 
 ---
 
-## 技术架构
+## 🚀 快速导航
 
-### 整体架构
+### 我是新用户，想快速上手
 
-```mermaid
-graph TB
-    subgraph Clients
-        N[npm]
-        Y[yarn]
-        P[pnpm]
-        B[bun]
-    end
-    
-    subgraph Grape
-        API[HTTP API Server]
-        REG[Registry Core]
-        AUTH[Auth Module]
-        STORE[Storage Layer]
-    end
-    
-    subgraph Storage
-        FS[本地文件系统]
-        CACHE[元数据缓存]
-    end
-    
-    subgraph External
-        UPSTREAM[公共 npm 仓库]
-    end
-    
-    Clients --> API
-    API --> REG
-    API --> AUTH
-    REG --> STORE
-    REG --> UPSTREAM
-    STORE --> FS
-    STORE --> CACHE
-```
+1. 阅读 [README](../README.md) 了解项目
+2. 按照 [快速开始](../README.md#快速开始) 安装运行
+3. 查看 [使用指南](USAGE.md#快速开始) 配置包管理器
 
-### 请求处理流程
+### 我是开发者，想参与贡献
 
-```mermaid
-sequenceDiagram
-    participant C as npm client
-    participant G as Grape Server
-    participant S as Local Storage
-    participant U as Upstream
+1. 阅读 [开发文档](DEVELOPMENT.md) 搭建开发环境
+2. 查看 [代码结构](DEVELOPMENT.md#代码结构) 了解项目架构
+3. 遵循 [贡献指南](DEVELOPMENT.md#贡献指南) 提交代码
 
-    C->>G: GET /lodash
-    G->>S: 检查本地缓存
-    
-    alt 本地存在
-        S-->>G: 返回元数据
-    else 本地不存在
-        G->>U: 请求上游
-        U-->>G: 返回元数据
-        G->>S: 缓存元数据
-    end
-    
-    G-->>C: 返回包信息
-    
-    C->>G: GET /lodash/-/lodash-4.17.21.tgz
-    G->>S: 检查本地文件
-    
-    alt 本地存在
-        S-->>G: 返回文件
-    else 本地不存在
-        G->>U: 下载 tarball
-        U-->>G: 返回文件
-        G->>S: 缓存文件
-    end
-    
-    G-->>C: 返回 tarball
-```
+### 我是运维，需要部署到生产环境
 
-### 技术栈
+1. 查看 [部署指南](DEPLOYMENT.md) 选择部署方式
+2. 参考 [配置指南](../configs/README.md) 配置生产环境
+3. 设置 [监控告警](DEPLOYMENT.md#监控与告警)
 
-| 组件 | 技术选型 | 说明 |
-|------|----------|------|
-| 后端语言 | Go 1.21+ | 高性能、并发、单一二进制 |
-| Web 框架 | Gin | 高性能、中间件丰富 |
-| 配置管理 | Viper | 支持多种配置格式 |
-| 日志 | Zap | 高性能结构化日志 |
-| 认证 | JWT | 无状态认证 |
-| 前端框架 | Vue 3 + TypeScript | 现代化响应式框架 |
-| UI 组件 | Element Plus | Vue 3 组件库 |
-| 状态管理 | Pinia | Vue 3 官方状态管理 |
-| 构建工具 | Vite | 极速开发体验 |
+### 我需要配置 Webhook
+
+直接查看 [Webhook 文档](WEBHOOKS.md)
+
+### 我需要 API 参考
+
+查看 [API 文档](API.md)
 
 ---
 
-## 开发路线图
+## 📖 按主题分类
 
-### 阶段一：基础框架 (已完成 ✅)
+### 安装和部署
 
-- [x] Go 项目骨架搭建
-- [x] Viper 配置管理 + Zap 日志
-- [x] Gin Web 框架 + 基础路由
-- [x] 健康检查 API
-- [x] npm 包元数据代理
-- [x] tarball 下载代理
-- [x] 本地缓存机制
-- [x] 验证：npm install 成功
+- [README - 快速开始](../README.md#快速开始)
+- [部署指南 - 单机部署](DEPLOYMENT.md#单机部署)
+- [部署指南 - Docker 部署](DEPLOYMENT.md#docker-部署)
+- [部署指南 - Kubernetes 部署](DEPLOYMENT.md#kubernetes-部署)
+- [部署指南 - Nginx 反向代理](DEPLOYMENT.md#nginx-反向代理)
+- [配置指南 - 配置文件说明](../configs/README.md)
 
-### 阶段二：发布能力 (进行中 🚧)
+### 配置和使用
 
-- [ ] 用户认证基础（内存用户 + JWT）
-- [ ] npm login 流程
-- [ ] npm publish 发布包
-- [ ] npm unpublish 撤销发布
-- [ ] 验证：发布私有包成功
+- [使用指南 - 包管理器配置](USAGE.md#快速配置)
+- [使用指南 - npm 使用](USAGE.md#npm-配置和使用)
+- [使用指南 - pnpm 使用](USAGE.md#pnpm-配置和使用)
+- [使用指南 - yarn 使用](USAGE.md#yarn-配置和使用)
+- [使用指南 - bun 使用](USAGE.md#bun-配置和使用)
+- [使用指南 - 发布私有包](USAGE.md#发布私有包)
+- [使用指南 - 多上游配置](USAGE.md#多上游配置)
 
-### 阶段三：前端完善 (已完成 ✅)
+### API 和集成
 
-- [x] Vite + Vue 3 + TypeScript 项目
-- [x] 登录页面
-- [x] 包浏览页面
-- [x] 包详情页面
-- [x] 用户管理页面
-- [x] 系统设置页面
+- [API 文档 - 完整参考](API.md)
+- [API 文档 - npm Registry API](API.md#npm-registry-api)
+- [API 文档 - 管理 API](API.md#管理-api)
+- [API 文档 - 管理员 API](API.md#管理员-api)
+- [Webhook 文档 - 事件通知](WEBHOOKS.md)
 
-### 阶段四：集成部署 (待开始)
+### 开发和贡献
 
-- [ ] Go 嵌入前端静态资源
-- [ ] 单一二进制部署
-- [ ] Docker 镜像
+- [开发文档 - 环境搭建](DEVELOPMENT.md#开发环境搭建)
+- [开发文档 - 代码结构](DEVELOPMENT.md#代码结构)
+- [开发文档 - 核心模块](DEVELOPMENT.md#核心模块说明)
+- [开发文档 - 测试指南](DEVELOPMENT.md#测试指南)
+- [开发文档 - 贡献指南](DEVELOPMENT.md#贡献指南)
 
----
+### 运维和监控
 
-## 快速开始
-
-### 环境要求
-
-- Go 1.21+
-- Node.js 18+ (仅前端开发需要)
-
-### 后端启动
-
-```bash
-# 构建
-make build
-
-# 运行
-./bin/grape
-
-# 或使用配置文件
-./bin/grape -c ./configs/config.yaml
-```
-
-### 前端启动
-
-```bash
-cd web
-npm install
-npm run dev
-```
-
-### 配置 npm 使用 Grape
-
-```bash
-# 设置 registry
-npm set registry http://localhost:4873
-
-# 安装包
-npm install lodash
-
-# 恢复默认
-npm set registry https://registry.npmjs.org
-```
+- [部署指南 - 监控与告警](DEPLOYMENT.md#监控与告警)
+- [部署指南 - 备份与恢复](DEPLOYMENT.md#备份与恢复)
+- [部署指南 - 故障排查](DEPLOYMENT.md#故障排查)
+- [API 文档 - Prometheus 指标](API.md#get--metrics)
 
 ---
 
-## 模块说明
+## 🔍 常见问题索引
 
-| 模块 | 路径 | 职责 |
-|------|------|------|
-| config | `internal/config/` | 配置加载和管理 |
-| logger | `internal/logger/` | 日志封装 |
-| server | `internal/server/` | HTTP 服务器和路由 |
-| registry | `internal/registry/` | npm registry 核心逻辑 |
-| storage | `internal/storage/` | 存储抽象层 |
-| web | `web/` | 前端项目 |
+### 安装问题
 
-详细模块文档请参阅各子目录下的 README。
+- [下载二进制](../README.md#方式一下载预编译二进制)
+- [从源码构建](../README.md#方式二从源码构建)
+- [Docker 部署](DEPLOYMENT.md#docker-部署)
+
+### 配置问题
+
+- [配置文件位置](../configs/README.md#配置文件位置)
+- [完整配置示例](../configs/README.md#完整配置示例)
+- [环境变量配置](../configs/README.md#环境变量)
+
+### 使用问题
+
+- [配置 npm](USAGE.md#npm-配置和使用)
+- [发布包](USAGE.md#发布私有包)
+- [多上游路由](USAGE.md#多上游配置)
+- [常见问题](USAGE.md#常见问题)
+
+### 认证问题
+
+- [用户登录](USAGE.md#用户认证)
+- [Token 管理](USAGE.md#token-管理)
+- [权限说明](USAGE.md#权限说明)
+
+### 部署问题
+
+- [Systemd 服务](DEPLOYMENT.md#systemd-服务部署)
+- [HTTPS 配置](DEPLOYMENT.md#https-配置)
+- [备份恢复](DEPLOYMENT.md#备份与恢复)
+
+---
+
+## 📝 文档更新记录
+
+| 日期 | 文档 | 更新内容 |
+|------|------|----------|
+| 2026-02-26 | 所有文档 | 初始版本，完整文档体系建立 |
+
+---
+
+## 🆘 获取帮助
+
+### 文档未解答的问题
+
+1. **查看完整文档目录**
+   - [docs/](./) - 所有文档
+
+2. **GitHub Issues**
+   - [提交问题](https://github.com/graperegistry/grape/issues)
+
+3. **社区讨论**
+   - 待添加
+
+### 文档改进
+
+欢迎提交文档改进建议：
+
+1. 发现文档错误
+2. 需要更多示例
+3. 内容不清晰
+4. 缺少某个主题的文档
+
+请通过 GitHub Issues 或直接提交 PR 改进文档。
+
+---
+
+## 📚 外部资源
+
+- [npm 官方文档](https://docs.npmjs.com/)
+- [Go 语言文档](https://go.dev/doc/)
+- [Gin 框架文档](https://gin-gonic.com/)
+- [Vue 3 文档](https://vuejs.org/)
+
+---
+
+<p align="center">
+  🍇 Grape 文档中心<br>
+  轻盈如风，功能如山
+</p>

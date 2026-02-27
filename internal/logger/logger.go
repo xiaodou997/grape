@@ -5,13 +5,34 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var Log *zap.SugaredLogger
+var (
+	Log        *zap.SugaredLogger
+	atomicLevel zap.AtomicLevel
+)
+
+// SetLevel 动态更新日志级别
+func SetLevel(level string) error {
+	switch level {
+	case "debug":
+		atomicLevel.SetLevel(zapcore.DebugLevel)
+	case "info":
+		atomicLevel.SetLevel(zapcore.InfoLevel)
+	case "warn":
+		atomicLevel.SetLevel(zapcore.WarnLevel)
+	case "error":
+		atomicLevel.SetLevel(zapcore.ErrorLevel)
+	default:
+		atomicLevel.SetLevel(zapcore.InfoLevel)
+	}
+	return nil
+}
 
 func Init(level string) error {
+	atomicLevel = parseLevel(level)
 	var config zap.Config
 
 	config = zap.Config{
-		Level:            parseLevel(level),
+		Level:            atomicLevel,
 		Development:      false,
 		Encoding:         "console",
 		EncoderConfig:    zap.NewProductionEncoderConfig(),

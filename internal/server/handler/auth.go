@@ -4,23 +4,135 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/graperegistry/grape/internal/auth"
+	"github.com/graperegistry/grape/internal/db"
 	"github.com/graperegistry/grape/internal/logger"
 )
 
-type AuthHandler struct {
-	userStore  auth.UserStore
-	jwtService *auth.JWTService
+// loginLimiter 登录限流器
+type loginLimiter struct {
+	attempts map[string]*attemptInfo
+	mu       sync.RWMutex
+	done     chan struct{} // 用于优雅关闭
+	stopped  bool          // 防止重复关闭
 }
 
-func NewAuthHandler(userStore auth.UserStore, jwtService *auth.JWTService) *AuthHandler {
-	return &AuthHandler{
-		userStore:  userStore,
-		jwtService: jwtService,
+type attemptInfo struct {
+	count     int
+	firstSeen time.Time
+}
+
+var (
+	limiter     *loginLimiter
+	limiterOnce sync.Once
+)
+
+func getLoginLimiter() *loginLimiter {
+	limiterOnce.Do(func() {
+		limiter = &loginLimiter{
+			attempts: make(map[string]*attemptInfo),
+			done:     make(chan struct{}),
+		}
+		// 定期清理过期记录
+		go limiter.runCleanup()
+	})
+	return limiter
+}
+
+// runCleanup 定期清理过期记录，支持优雅关闭
+func (l *loginLimiter) runCleanup() {
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
+	
+	for {
+		select {
+		case <-ticker.C:
+			l.cleanup()
+		case <-l.done:
+			return
+		}
 	}
+}
+
+// Stop 停止清理 goroutine
+func (l *loginLimiter) Stop() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if !l.stopped {
+		close(l.done)
+		l.stopped = true
+	}
+}
+
+func (l *loginLimiter) cleanup() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	
+	now := time.Now()
+	for ip, info := range l.attempts {
+		if now.Sub(info.firstSeen) > time.Minute {
+			delete(l.attempts, ip)
+		}
+	}
+}
+
+func (l *loginLimiter) checkLimit(ip string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	now := time.Now()
+	info, exists := l.attempts[ip]
+	
+	if !exists || now.Sub(info.firstSeen) > time.Minute {
+		l.attempts[ip] = &attemptInfo{
+			count:     1,
+			firstSeen: now,
+		}
+		return true
+	}
+
+	if info.count >= 10 {
+		return false
+	}
+
+	info.count++
+	return true
+}
+
+func (l *loginLimiter) reset(ip string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	delete(l.attempts, ip)
+}
+
+// StopLoginLimiter 停止登录限流器（服务关闭时调用）
+func StopLoginLimiter() {
+	if limiter != nil {
+		limiter.Stop()
+	}
+}
+
+type AuthHandler struct {
+	userStore        auth.UserStore
+	jwtService       *auth.JWTService
+	allowRegistration bool
+}
+
+func NewAuthHandler(userStore auth.UserStore, jwtService *auth.JWTService, allowRegistration bool) *AuthHandler {
+	return &AuthHandler{
+		userStore:         userStore,
+		jwtService:        jwtService,
+		allowRegistration: allowRegistration,
+	}
+}
+
+// SetAllowRegistration 动态更新自助注册开关
+func (h *AuthHandler) SetAllowRegistration(allow bool) {
+	h.allowRegistration = allow
 }
 
 // LoginRequest npm login 请求格式
@@ -43,6 +155,16 @@ type LoginResponse struct {
 // Login 处理 npm login 请求
 // PUT /-/user/org.couchdb.user:{username}
 func (h *AuthHandler) Login(c *gin.Context) {
+	// 检查登录限流
+	clientIP := c.ClientIP()
+	if !getLoginLimiter().checkLimit(clientIP) {
+		logger.Warnf("Login rate limited for IP: %s", clientIP)
+		c.JSON(http.StatusTooManyRequests, gin.H{
+			"error": "too many login attempts, please try again later",
+		})
+		return
+	}
+
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Debugf("Failed to parse login request: %v", err)
@@ -69,9 +191,24 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	// 检查是登录还是注册
 	existingUser, err := h.userStore.Get(username)
 	if err == auth.ErrUserNotFound {
-		// 用户不存在，创建新用户
+		// 用户不存在，检查是否允许自助注册
+		if !h.allowRegistration {
+			logger.Warnf("Registration attempted for non-existent user: %s (registration disabled)", username)
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "registration is disabled, contact your administrator",
+			})
+			return
+		}
+		
+		// 允许自助注册，创建新用户
 		if req.Password == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "password required"})
+			return
+		}
+		
+		// 验证密码强度
+		if err := auth.ValidatePassword(req.Password); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		
@@ -106,6 +243,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		existingUser = validatedUser
 	}
 
+	// 登录成功，重置限流计数
+	getLoginLimiter().reset(clientIP)
+
 	// 更新最后登录时间
 	now := time.Now()
 	existingUser.LastLogin = &now
@@ -120,6 +260,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	logger.Infof("User logged in: %s", username)
+	db.RecordAudit("login", username, c.ClientIP(), "登录成功")
 
 	c.JSON(http.StatusOK, LoginResponse{
 		OK:    true,
@@ -187,8 +328,19 @@ func (h *AuthHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
+	// 验证密码强度
+	if err := auth.ValidatePassword(req.Password); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 验证角色
 	if req.Role == "" {
 		req.Role = "developer"
+	}
+	if err := auth.ValidateRole(req.Role); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	user := &auth.User{
@@ -208,11 +360,83 @@ func (h *AuthHandler) CreateUser(c *gin.Context) {
 	}
 
 	logger.Infof("Admin created user: %s", req.Name)
+	adminUser := auth.GetCurrentUser(c)
+	adminName := ""
+	if adminUser != nil {
+		adminName = adminUser.Username
+	}
+	db.RecordAudit("user_create", adminName, c.ClientIP(), "创建用户: "+req.Name)
 
 	c.JSON(http.StatusCreated, gin.H{
 		"ok":       true,
 		"username": user.Username,
 		"role":     user.Role,
+	})
+}
+
+// UpdateUser 更新用户信息 (管理员)
+// PUT /-/api/admin/users/:username
+func (h *AuthHandler) UpdateUser(c *gin.Context) {
+	username := c.Param("username")
+
+	var req struct {
+		Email    string `json:"email"`
+		Password string `json:"password"` // 留空则不修改密码
+		Role     string `json:"role"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	// 如果要更新密码，验证密码强度
+	if req.Password != "" {
+		if err := auth.ValidatePassword(req.Password); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	// 如果要更新角色，验证角色合法性
+	if req.Role != "" {
+		if err := auth.ValidateRole(req.Role); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	existingUser, err := h.userStore.Get(username)
+	if err != nil {
+		if err == auth.ErrUserNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+
+	// 只更新非空字段
+	if req.Email != "" {
+		existingUser.Email = req.Email
+	}
+	if req.Role != "" {
+		existingUser.Role = req.Role
+	}
+	if req.Password != "" {
+		existingUser.Password = req.Password
+	}
+
+	if err := h.userStore.Update(existingUser); err != nil {
+		logger.Errorf("Failed to update user: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user"})
+		return
+	}
+
+	logger.Infof("Admin updated user: %s", username)
+	c.JSON(http.StatusOK, gin.H{
+		"ok":       true,
+		"username": username,
 	})
 }
 
@@ -236,6 +460,12 @@ func (h *AuthHandler) DeleteUser(c *gin.Context) {
 	}
 
 	logger.Infof("Admin deleted user: %s", username)
+	delAdminUser := auth.GetCurrentUser(c)
+	delAdminName := ""
+	if delAdminUser != nil {
+		delAdminName = delAdminUser.Username
+	}
+	db.RecordAudit("user_delete", delAdminName, c.ClientIP(), "删除用户: "+username)
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 

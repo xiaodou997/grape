@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/graperegistry/grape/internal/logger"
+	"github.com/graperegistry/grape/internal/metrics"
 	"github.com/graperegistry/grape/internal/registry"
 	"github.com/graperegistry/grape/internal/storage/local"
 )
@@ -27,6 +28,21 @@ func NewRegistryHandler(proxy *registry.Proxy, storage *local.Storage, baseURL s
 	}
 }
 
+// requestBaseURL 从请求中动态推断 baseURL，支持反向代理场景
+func requestBaseURL(c *gin.Context) string {
+	scheme := "http"
+	if proto := c.GetHeader("X-Forwarded-Proto"); proto != "" {
+		scheme = proto
+	} else if c.Request.TLS != nil {
+		scheme = "https"
+	}
+	host := c.GetHeader("X-Forwarded-Host")
+	if host == "" {
+		host = c.Request.Host
+	}
+	return scheme + "://" + host
+}
+
 // GetPackage handles GET /:package
 func (h *RegistryHandler) GetPackage(c *gin.Context) {
 	packageName := c.Param("package")
@@ -37,13 +53,15 @@ func (h *RegistryHandler) GetPackage(c *gin.Context) {
 
 	logger.Debugf("Getting package: %s", packageName)
 
+	baseURL := requestBaseURL(c)
+
 	// Check local storage first
 	if h.storage.HasPackage(packageName) {
 		data, err := h.storage.GetMetadata(packageName)
 		if err != nil {
 			logger.Errorf("Failed to read local metadata: %v", err)
 		} else {
-			rewritten, err := h.rewriteTarballURLs(data, packageName)
+			rewritten, err := h.rewriteTarballURLs(data, packageName, baseURL)
 			if err != nil {
 				logger.Errorf("Failed to rewrite URLs: %v", err)
 				c.Data(http.StatusOK, "application/json", data)
@@ -72,7 +90,7 @@ func (h *RegistryHandler) GetPackage(c *gin.Context) {
 	}
 
 	// Rewrite tarball URLs
-	rewritten, err := h.rewriteTarballURLs(data, packageName)
+	rewritten, err := h.rewriteTarballURLs(data, packageName, baseURL)
 	if err != nil {
 		logger.Warnf("Failed to rewrite URLs: %v", err)
 		c.Data(http.StatusOK, "application/json", data)
@@ -100,6 +118,7 @@ func (h *RegistryHandler) GetTarball(c *gin.Context) {
 		if err != nil {
 			logger.Errorf("Failed to read local tarball: %v", err)
 		} else {
+			metrics.PackageDownloadsTotal.WithLabelValues(packageName).Inc()
 			c.Data(http.StatusOK, "application/octet-stream", data)
 			return
 		}
@@ -122,10 +141,11 @@ func (h *RegistryHandler) GetTarball(c *gin.Context) {
 		logger.Warnf("Failed to cache tarball: %v", err)
 	}
 
+	metrics.PackageDownloadsTotal.WithLabelValues(packageName).Inc()
 	c.Data(http.StatusOK, "application/octet-stream", data)
 }
 
-func (h *RegistryHandler) rewriteTarballURLs(data []byte, packageName string) ([]byte, error) {
+func (h *RegistryHandler) rewriteTarballURLs(data []byte, packageName string, baseURL string) ([]byte, error) {
 	var pkg map[string]interface{}
 	if err := json.Unmarshal(data, &pkg); err != nil {
 		return nil, err
@@ -149,12 +169,20 @@ func (h *RegistryHandler) rewriteTarballURLs(data []byte, packageName string) ([
 
 		if tarball, ok := dist["tarball"].(string); ok {
 			filename := path.Base(tarball)
-			dist["tarball"] = fmt.Sprintf("%s/%s/-/%s", h.baseURL, packageName, filename)
+			dist["tarball"] = fmt.Sprintf("%s/%s/-/%s", strings.TrimSuffix(baseURL, "/"), packageName, filename)
 			versionData["dist"] = dist
 			versions[version] = versionData
 		}
 	}
 
 	pkg["versions"] = versions
-	return json.Marshal(pkg)
+	
+	// 使用 json.Marshal 确保输出有效的 JSON
+	rewritten, err := json.Marshal(pkg)
+	if err != nil {
+		logger.Errorf("Failed to marshal rewritten JSON for %s: %v", packageName, err)
+		return data, nil // 返回原始数据
+	}
+	
+	return rewritten, nil
 }

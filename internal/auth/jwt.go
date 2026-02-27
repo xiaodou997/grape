@@ -73,6 +73,16 @@ func (s *JWTService) ValidateToken(tokenString string) (*Claims, error) {
 	return nil, ErrInvalidToken
 }
 
+// UpdateSecret 动态更新 JWT 密钥和过期时间
+func (s *JWTService) UpdateSecret(secret string, expiresIn time.Duration) {
+	if secret != "" {
+		s.secret = []byte(secret)
+	}
+	if expiresIn > 0 {
+		s.expiresIn = expiresIn
+	}
+}
+
 func (s *JWTService) RefreshToken(tokenString string) (string, error) {
 	claims, err := s.ValidateToken(tokenString)
 	if err != nil {

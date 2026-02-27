@@ -18,7 +18,7 @@
     <!-- Package List -->
     <div class="packages-list" v-loading="loading">
       <el-row :gutter="20">
-        <el-col :span="8" v-for="pkg in filteredPackages" :key="pkg.name">
+        <el-col :span="8" v-for="pkg in paginatedPackages" :key="pkg.name">
           <el-card class="package-card" shadow="hover" @click="goToPackage(pkg.name)">
             <div class="package-header">
               <h3 class="package-name">{{ pkg.name }}</h3>
@@ -40,7 +40,18 @@
         </el-col>
       </el-row>
 
-      <el-empty v-if="filteredPackages.length === 0" description="暂无包" />
+      <el-empty v-if="filteredPackages.length === 0 && !loading" description="暂无包" />
+
+      <!-- Pagination -->
+      <div class="pagination-section" v-if="totalPackages > pageSize">
+        <el-pagination
+          v-model:current-page="currentPage"
+          :page-size="pageSize"
+          :total="totalPackages"
+          layout="total, prev, pager, next, jumper"
+          @current-change="handlePageChange"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -49,6 +60,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Document, Clock } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { packageApi } from '@/api'
 import type { Package } from '@/api/types'
 
@@ -56,6 +68,10 @@ const router = useRouter()
 const loading = ref(false)
 const searchQuery = ref('')
 const packages = ref<Package[]>([])
+
+// 分页
+const currentPage = ref(1)
+const pageSize = ref(30)  // 每页显示 30 个包
 
 const filteredPackages = computed(() => {
   if (!searchQuery.value) return packages.value
@@ -66,8 +82,23 @@ const filteredPackages = computed(() => {
   )
 })
 
+const totalPackages = computed(() => filteredPackages.value.length)
+
+const paginatedPackages = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return filteredPackages.value.slice(start, end)
+})
+
 const handleSearch = () => {
-  // Debounced search is handled by computed property
+  // 搜索时重置到第一页
+  currentPage.value = 1
+}
+
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+  // 滚动到顶部
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const goToPackage = (name: string) => {
@@ -83,18 +114,10 @@ const formatTime = (time: string | undefined) => {
 const loadPackages = async () => {
   loading.value = true
   try {
-    // For now, show cached packages from local storage
-    // TODO: Implement proper package listing API
     const res = await packageApi.getPackages()
     packages.value = res.data.packages || []
-  } catch (error) {
-    console.error('Failed to load packages:', error)
-    // Fallback to mock data for demo
-    packages.value = [
-      { name: 'lodash', description: 'Lodash modular utilities', version: '4.17.21', private: false, updatedAt: '2024-01-15' },
-      { name: '@babel/core', description: 'Babel compiler core', version: '7.23.0', private: false, updatedAt: '2024-01-14' },
-      { name: 'is-thirteen', description: 'Check if a number is equal to 13', version: '2.0.0', private: false, updatedAt: '2024-01-13' },
-    ]
+  } catch {
+    ElMessage.error('加载包列表失败')
   } finally {
     loading.value = false
   }
@@ -160,5 +183,11 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.pagination-section {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
 }
 </style>

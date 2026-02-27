@@ -34,6 +34,7 @@ func ReadFile(name string) ([]byte, error) {
 
 // Exists 检查文件是否存在
 func Exists(name string) bool {
-	_, err := distFS.Open("dist" + name)
+	// 使用 fs.Stat 避免 Open 后忘记 Close
+	_, err := fs.Stat(distFS, "dist"+name)
 	return err == nil
 }

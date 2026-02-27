@@ -8,6 +8,16 @@ import (
 	"github.com/spf13/viper"
 )
 
+var (
+	globalViper    *viper.Viper
+	globalCfgPath  string
+)
+
+// GetConfigPath 返回当前配置文件路径
+func GetConfigPath() string {
+	return globalCfgPath
+}
+
 func Load(configPath string) (*Config, error) {
 	cfg := Default()
 
@@ -46,5 +56,49 @@ func Load(configPath string) (*Config, error) {
 		}
 	}
 
+	// 保存全局 viper 实例
+	globalViper = v
+	if configPath != "" {
+		globalCfgPath = configPath
+	} else {
+		globalCfgPath = v.ConfigFileUsed()
+	}
+
 	return cfg, nil
+}
+
+// Save 将配置写回配置文件（热加载支持）
+func Save(cfg *Config) error {
+	if globalViper == nil {
+		return fmt.Errorf("config not initialized")
+	}
+
+	// 更新 viper 中可编辑的字段
+	globalViper.Set("registry.upstream", cfg.Registry.Upstream)
+	globalViper.Set("registry.upstreams", upstreamsToSlice(cfg.Registry.Upstreams))
+	globalViper.Set("auth.jwt_secret", cfg.Auth.JWTSecret)
+	globalViper.Set("auth.jwt_expiry", cfg.Auth.JWTExpiry.String())
+	globalViper.Set("auth.allow_registration", cfg.Auth.AllowRegistration)
+	globalViper.Set("log.level", cfg.Log.Level)
+
+	if globalCfgPath == "" {
+		return fmt.Errorf("no config file path available")
+	}
+
+	return globalViper.WriteConfigAs(globalCfgPath)
+}
+
+// upstreamsToSlice 将 UpstreamConfig slice 转为 viper 可序列化的格式
+func upstreamsToSlice(upstreams []UpstreamConfig) []map[string]interface{} {
+	result := make([]map[string]interface{}, 0, len(upstreams))
+	for _, u := range upstreams {
+		result = append(result, map[string]interface{}{
+			"name":    u.Name,
+			"url":     u.URL,
+			"scope":   u.Scope,
+			"timeout": u.Timeout.String(),
+			"enabled": u.Enabled,
+		})
+	}
+	return result
 }

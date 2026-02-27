@@ -2,34 +2,42 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
+// 密码验证错误
 var (
-	ErrUserNotFound      = errors.New("user not found")
-	ErrInvalidPassword   = errors.New("invalid password")
-	ErrUserAlreadyExists = errors.New("user already exists")
+	ErrPasswordTooShort = errors.New("password must be at least 8 characters")
 )
 
-type User struct {
-	Username   string    `json:"username"`
-	Email      string    `json:"email"`
-	Password   string    `json:"-"` // 不暴露密码
-	Role       string    `json:"role"`
-	CreatedAt  time.Time `json:"createdAt"`
-	LastLogin  *time.Time `json:"lastLogin,omitempty"`
+// ValidRoles 有效的角色列表
+var ValidRoles = map[string]bool{
+	"admin":     true,
+	"developer": true,
+	"readonly":  true,
 }
 
-type UserStore interface {
-	Get(username string) (*User, error)
-	Create(user *User) error
-	Update(user *User) error
-	Delete(username string) error
-	List() []*User
-	Validate(username, password string) (*User, error)
+// ValidatePassword 验证密码强度
+func ValidatePassword(password string) error {
+	if len(password) < 8 {
+		return ErrPasswordTooShort
+	}
+	return nil
+}
+
+// ValidateRole 验证角色是否有效
+func ValidateRole(role string) error {
+	if role == "" {
+		return nil // 空角色使用默认值
+	}
+	if !ValidRoles[role] {
+		return fmt.Errorf("invalid role: %s, must be one of: admin, developer, readonly", role)
+	}
+	return nil
 }
 
 // MemoryUserStore 内存用户存储
@@ -66,7 +74,9 @@ func (s *MemoryUserStore) Get(username string) (*User, error) {
 	if !ok {
 		return nil, ErrUserNotFound
 	}
-	return user, nil
+	// 返回副本，避免调用方修改内部状态
+	cp := *user
+	return &cp, nil
 }
 
 func (s *MemoryUserStore) Create(user *User) error {
@@ -119,7 +129,9 @@ func (s *MemoryUserStore) List() []*User {
 
 	users := make([]*User, 0, len(s.users))
 	for _, user := range s.users {
-		users = append(users, user)
+		// 返回副本，避免调用方修改内部状态
+		cp := *user
+		users = append(users, &cp)
 	}
 	return users
 }
@@ -137,5 +149,7 @@ func (s *MemoryUserStore) Validate(username, password string) (*User, error) {
 		return nil, ErrInvalidPassword
 	}
 
-	return user, nil
+	// 返回副本，避免调用方修改内部状态
+	cp := *user
+	return &cp, nil
 }
