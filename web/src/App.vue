@@ -47,15 +47,15 @@
       </el-header>
 
       <!-- Change Password Dialog -->
-      <el-dialog v-model="showChangePassword" :title="t('user.changePassword')" width="420px">
+      <el-dialog v-model="showChangePassword" :title="t('users.changePassword')" width="420px">
         <el-form ref="pwdFormRef" :model="pwdForm" :rules="pwdRules" label-width="100px">
-          <el-form-item :label="t('user.oldPassword')" prop="oldPassword">
+          <el-form-item :label="t('users.oldPassword')" prop="oldPassword">
             <el-input v-model="pwdForm.oldPassword" type="password" show-password />
           </el-form-item>
-          <el-form-item :label="t('user.newPassword')" prop="newPassword">
+          <el-form-item :label="t('users.newPassword')" prop="newPassword">
             <el-input v-model="pwdForm.newPassword" type="password" show-password />
           </el-form-item>
-          <el-form-item :label="t('user.confirmPassword')" prop="confirmPassword">
+          <el-form-item :label="t('users.confirmPassword')" prop="confirmPassword">
             <el-input v-model="pwdForm.confirmPassword" type="password" show-password />
           </el-form-item>
         </el-form>
@@ -111,17 +111,17 @@ const pwdForm = reactive({
 })
 
 const pwdRules: FormRules = {
-  oldPassword: [{ required: true, message: t('user.oldPasswordRequired'), trigger: 'blur' }],
+  oldPassword: [{ required: true, message: t('users.oldPasswordRequired'), trigger: 'blur' }],
   newPassword: [
-    { required: true, message: t('user.newPasswordRequired'), trigger: 'blur' },
-    { min: 6, message: t('user.passwordMinLength'), trigger: 'blur' }
+    { required: true, message: t('users.newPasswordRequired'), trigger: 'blur' },
+    { min: 6, message: t('users.passwordMinLength'), trigger: 'blur' }
   ],
   confirmPassword: [
-    { required: true, message: t('user.confirmPasswordRequired'), trigger: 'blur' },
+    { required: true, message: t('users.confirmPasswordRequired'), trigger: 'blur' },
     {
       validator: (rule: any, value: string, callback: Function) => {
         if (value !== pwdForm.newPassword) {
-          callback(new Error(t('user.passwordMismatch')))
+          callback(new Error(t('users.passwordMismatch')))
         } else {
           callback()
         }
@@ -135,17 +135,16 @@ const handleChangePassword = async () => {
   const valid = await pwdFormRef.value?.validate()
   if (!valid) return
 
-  pwdLoading.value = true
-  try {
-    await adminApi.updateUser(userStore.username!, {
-      password: pwdForm.newPassword
-    })
-    ElMessage.success(t('user.passwordChanged'))
-    showChangePassword.value = false
-    pwdFormRef.value?.resetFields()
-  } catch (error: any) {
-    ElMessage.error(error.response?.data?.error || t('user.passwordChangeFailed'))
-  } finally {
+      pwdLoading.value = true
+      try {
+        await adminApi.updateUser(userStore.username!, {
+          password: pwdForm.newPassword
+        })
+        ElMessage.success(t('users.passwordChanged'))
+        showChangePassword.value = false
+        pwdFormRef.value?.resetFields()
+      } catch (error: any) {
+        ElMessage.error(error.response?.data?.error || t('users.passwordChangeFailed'))  } finally {
     pwdLoading.value = false
   }
 }
