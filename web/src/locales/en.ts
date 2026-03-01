@@ -67,20 +67,30 @@ export default {
       localPackages: 'Local Packages',
       cachedPackages: 'Cached Packages',
       storageSize: 'Storage Used',
+      loadError: 'Failed to load statistics',
+    },
+    recentActivity: 'Recent Activity',
+    viewAll: 'View All',
+    quickActions: {
+      title: 'Quick Actions',
+      users: 'User Management',
+      tokens: 'CI/CD Tokens',
+      backup: 'Backup & Restore',
+      settings: 'Settings',
     },
     whyGrape: 'Why Grape?',
     features: {
-      fastDeploy: {
-        title: 'Fast Deployment',
-        desc: 'Single binary file, no Node.js required. Download and run.',
+      adminPanel: {
+        title: 'Full-Featured Admin',
+        desc: 'Internationalized UI, user management, token management, and audit logs.',
       },
-      secure: {
-        title: 'Secure & Controllable',
-        desc: 'Private packages fully isolated, fine-grained permissions, complete audit logs.',
+      enterpriseSecurity: {
+        title: 'Enterprise Security',
+        desc: 'JWT authentication, package-level ACL, CI/CD tokens, and operation auditing.',
       },
-      smartProxy: {
-        title: 'Smart Proxy',
-        desc: 'Auto-cache public packages, accelerate team development. Multi-upstream support.',
+      smartData: {
+        title: 'Smart Data Management',
+        desc: 'Multi-upstream proxy, auto-cache, backup & restore, and garbage collection.',
       },
     },
     guide: {
@@ -106,6 +116,8 @@ export default {
   },
   packages: {
     title: 'Packages',
+    name: 'Name',
+    version: 'Version',
     searchPlaceholder: 'Search packages...',
     noPackages: 'No packages found',
     empty: 'No packages',

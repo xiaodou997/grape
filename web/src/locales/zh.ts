@@ -67,20 +67,30 @@ export default {
       localPackages: '本地包数量',
       cachedPackages: '缓存包数量',
       storageSize: '存储占用',
+      loadError: '加载统计数据失败',
+    },
+    recentActivity: '最近活动',
+    viewAll: '查看全部',
+    quickActions: {
+      title: '快捷入口',
+      users: '用户管理',
+      tokens: 'CI/CD Token',
+      backup: '备份恢复',
+      settings: '系统设置',
     },
     whyGrape: '为什么选择 Grape？',
     features: {
-      fastDeploy: {
-        title: '极速部署',
-        desc: '单一二进制文件，无需安装 Node.js，无需 npm install。下载即用，开箱即部署。',
+      adminPanel: {
+        title: '全功能管理后台',
+        desc: '国际化界面、用户管理、Token管理和审计日志。',
       },
-      secure: {
-        title: '安全可控',
-        desc: '私有包完全隔离，精细的权限控制，完整的审计日志，企业级安全保障。',
+      enterpriseSecurity: {
+        title: '企业级安全',
+        desc: 'JWT认证、包级权限控制、CI/CD Token和操作审计。',
       },
-      smartProxy: {
-        title: '智能代理',
-        desc: '自动缓存公共包，加速团队开发。支持多上游源，灵活配置。',
+      smartData: {
+        title: '智能数据管理',
+        desc: '多上游代理、自动缓存、备份恢复和垃圾回收。',
       },
     },
     guide: {
@@ -105,7 +115,9 @@ export default {
     step4: '4. 恢复默认源',
   },
   packages: {
-    title: '包管理',
+    title: '包列表',
+    name: '名称',
+    version: '版本',
     searchPlaceholder: '搜索包...',
     noPackages: '暂无包',
     empty: '暂无包',
@@ -113,8 +125,8 @@ export default {
     cached: '缓存',
     noDescription: '暂无描述',
     loadError: '加载包列表失败',
-    localPackages: '本地包',
-    cachedPackages: '缓存包',
+    localPackages: '本地包数量',
+    cachedPackages: '缓存包数量',
     versions: '版本',
     dependencies: '依赖',
     readme: '说明文档',
