@@ -11,17 +11,18 @@
           
           <el-menu mode="horizontal" :ellipsis="false" class="nav-menu">
             <el-menu-item index="packages">
-              <router-link to="/packages">包列表</router-link>
+              <router-link to="/packages">{{ t('nav.packages') }}</router-link>
             </el-menu-item>
             <el-menu-item index="guide">
-              <router-link to="/guide">使用指南</router-link>
+              <router-link to="/guide">{{ t('nav.guide') }}</router-link>
             </el-menu-item>
             <el-menu-item index="admin">
-              <router-link to="/admin">管理后台</router-link>
+              <router-link to="/admin">{{ t('nav.admin') }}</router-link>
             </el-menu-item>
           </el-menu>
 
           <div class="header-right">
+            <LanguageSwitch />
             <template v-if="userStore.isLoggedIn">
               <el-dropdown>
                 <span class="user-dropdown">
@@ -32,13 +33,13 @@
                 </span>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item @click="handleLogout">退出登录</el-dropdown-item>
+                    <el-dropdown-item @click="handleLogout">{{ t('nav.logout') }}</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
             </template>
             <template v-else>
-              <el-button type="primary" @click="$router.push('/login')">登录</el-button>
+              <el-button type="primary" @click="$router.push('/login')">{{ t('nav.login') }}</el-button>
             </template>
           </div>
         </div>
@@ -55,7 +56,7 @@
 
       <!-- Footer -->
       <el-footer class="app-footer">
-        <p>🍇 Grape - 轻盈如风的企业级私有 npm 仓库</p>
+        <p>🍇 Grape - {{ t('home.heroSubtitle') }}</p>
         <p>Powered by Go + Vue 3</p>
       </el-footer>
     </el-container>
@@ -63,8 +64,11 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
+import LanguageSwitch from '@/components/LanguageSwitch.vue'
 
+const { t } = useI18n()
 const userStore = useUserStore()
 
 const handleLogout = () => {

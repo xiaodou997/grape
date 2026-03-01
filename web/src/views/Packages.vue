@@ -4,7 +4,7 @@
     <div class="search-section">
       <el-input
         v-model="searchQuery"
-        placeholder="搜索包..."
+        :placeholder="t('packages.searchPlaceholder')"
         size="large"
         clearable
         @input="handleSearch"
@@ -22,10 +22,10 @@
           <el-card class="package-card" shadow="hover" @click="goToPackage(pkg.name)">
             <div class="package-header">
               <h3 class="package-name">{{ pkg.name }}</h3>
-              <el-tag v-if="pkg.private" type="success" size="small">私有</el-tag>
-              <el-tag v-else type="info" size="small">缓存</el-tag>
+              <el-tag v-if="pkg.private" type="success" size="small">{{ t('packages.private') }}</el-tag>
+              <el-tag v-else type="info" size="small">{{ t('packages.cached') }}</el-tag>
             </div>
-            <p class="package-description">{{ pkg.description || '暂无描述' }}</p>
+            <p class="package-description">{{ pkg.description || t('packages.noDescription') }}</p>
             <div class="package-meta">
               <span class="version">
                 <el-icon><Document /></el-icon>
@@ -40,7 +40,7 @@
         </el-col>
       </el-row>
 
-      <el-empty v-if="filteredPackages.length === 0 && !loading" description="暂无包" />
+      <el-empty v-if="filteredPackages.length === 0 && !loading" :description="t('packages.empty')" />
 
       <!-- Pagination -->
       <div class="pagination-section" v-if="totalPackages > pageSize">
@@ -59,11 +59,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Search, Document, Clock } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { packageApi } from '@/api'
 import type { Package } from '@/api/types'
 
+const { t, locale } = useI18n()
 const router = useRouter()
 const loading = ref(false)
 const searchQuery = ref('')
@@ -108,7 +110,7 @@ const goToPackage = (name: string) => {
 const formatTime = (time: string | undefined) => {
   if (!time) return '-'
   const date = new Date(time)
-  return date.toLocaleDateString('zh-CN')
+  return date.toLocaleDateString(locale.value === 'zh' ? 'zh-CN' : 'en-US')
 }
 
 const loadPackages = async () => {
@@ -117,7 +119,7 @@ const loadPackages = async () => {
     const res = await packageApi.getPackages()
     packages.value = res.data.packages || []
   } catch {
-    ElMessage.error('加载包列表失败')
+    ElMessage.error(t('packages.loadError'))
   } finally {
     loading.value = false
   }

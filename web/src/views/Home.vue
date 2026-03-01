@@ -7,15 +7,15 @@
           <span class="grape-icon">🍇</span>
           Grape
         </h1>
-        <p class="hero-subtitle">轻盈如风的企业级私有 npm 仓库</p>
-        <p class="hero-tagline">One binary, zero debt. 一个二进制，零负担。</p>
+        <p class="hero-subtitle">{{ t('home.heroSubtitle') }}</p>
+        <p class="hero-tagline">{{ t('home.heroTagline') }}</p>
         
         <div class="hero-actions">
           <el-button type="primary" size="large" @click="$router.push('/packages')">
-            浏览包
+            {{ t('home.browsePackages') }}
           </el-button>
           <el-button size="large" @click="showSetupGuide = true">
-            快速开始
+            {{ t('home.quickStart') }}
           </el-button>
         </div>
       </div>
@@ -26,7 +26,7 @@
       <el-row :gutter="20">
         <el-col :span="8">
           <el-card shadow="hover" class="stat-card">
-            <el-statistic title="本地包数量" :value="stats.localPackages">
+            <el-statistic :title="t('home.stats.localPackages')" :value="stats.localPackages">
               <template #prefix>
                 <el-icon><Box /></el-icon>
               </template>
@@ -35,7 +35,7 @@
         </el-col>
         <el-col :span="8">
           <el-card shadow="hover" class="stat-card">
-            <el-statistic title="缓存包数量" :value="stats.cachedPackages">
+            <el-statistic :title="t('home.stats.cachedPackages')" :value="stats.cachedPackages">
               <template #prefix>
                 <el-icon><Download /></el-icon>
               </template>
@@ -44,7 +44,7 @@
         </el-col>
         <el-col :span="8">
           <el-card shadow="hover" class="stat-card">
-            <el-statistic title="存储占用" :value="stats.storageSize" suffix="MB">
+            <el-statistic :title="t('home.stats.storageSize')" :value="stats.storageSize" suffix="MB">
               <template #prefix>
                 <el-icon><Folder /></el-icon>
               </template>
@@ -56,17 +56,17 @@
 
     <!-- Features Section -->
     <section class="features">
-      <h2 class="section-title">为什么选择 Grape？</h2>
+      <h2 class="section-title">{{ t('home.whyGrape') }}</h2>
       <el-row :gutter="24">
         <el-col :span="8">
           <el-card class="feature-card">
             <template #header>
               <div class="feature-header">
                 <el-icon :size="32" color="var(--grape-primary)"><Promotion /></el-icon>
-                <span>极速部署</span>
+                <span>{{ t('home.features.fastDeploy.title') }}</span>
               </div>
             </template>
-            <p>单一二进制文件，无需安装 Node.js，无需 npm install。下载即用，开箱即部署。</p>
+            <p>{{ t('home.features.fastDeploy.desc') }}</p>
           </el-card>
         </el-col>
         <el-col :span="8">
@@ -74,10 +74,10 @@
             <template #header>
               <div class="feature-header">
                 <el-icon :size="32" color="var(--grape-primary)"><Lock /></el-icon>
-                <span>安全可控</span>
+                <span>{{ t('home.features.secure.title') }}</span>
               </div>
             </template>
-            <p>私有包完全隔离，精细的权限控制，完整的审计日志，企业级安全保障。</p>
+            <p>{{ t('home.features.secure.desc') }}</p>
           </el-card>
         </el-col>
         <el-col :span="8">
@@ -85,34 +85,34 @@
             <template #header>
               <div class="feature-header">
                 <el-icon :size="32" color="var(--grape-primary)"><Connection /></el-icon>
-                <span>智能代理</span>
+                <span>{{ t('home.features.smartProxy.title') }}</span>
               </div>
             </template>
-            <p>自动缓存公共包，加速团队开发。支持多上游源，灵活配置。</p>
+            <p>{{ t('home.features.smartProxy.desc') }}</p>
           </el-card>
         </el-col>
       </el-row>
     </section>
 
     <!-- Setup Guide Dialog -->
-    <el-dialog v-model="showSetupGuide" title="快速开始" width="600px">
+    <el-dialog v-model="showSetupGuide" :title="t('home.quickStart')" width="600px">
       <div class="setup-guide">
-        <h4>1. 配置 npm 使用 Grape</h4>
+        <h4>{{ t('home.guide.step1') }}</h4>
         <div class="code-block">
           <code>npm set registry http://localhost:4873</code>
         </div>
         
-        <h4>2. 安装包</h4>
+        <h4>{{ t('home.guide.step2') }}</h4>
         <div class="code-block">
           <code>npm install lodash</code>
         </div>
         
-        <h4>3. 发布私有包</h4>
+        <h4>{{ t('home.guide.step3') }}</h4>
         <div class="code-block">
           <code>npm publish --registry http://localhost:4873</code>
         </div>
         
-        <h4>4. 恢复默认源</h4>
+        <h4>{{ t('home.guide.step4') }}</h4>
         <div class="code-block">
           <code>npm set registry https://registry.npmjs.org</code>
         </div>
@@ -123,8 +123,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Box, Download, Folder, Promotion, Lock, Connection } from '@element-plus/icons-vue'
 
+const { t } = useI18n()
 const showSetupGuide = ref(false)
 
 const stats = ref({

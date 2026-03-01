@@ -4,7 +4,7 @@
       <template #header>
         <div class="login-header">
           <span class="grape-icon">🍇</span>
-          <h2>Grape 登录</h2>
+          <h2>{{ t('login.title') }}</h2>
         </div>
       </template>
 
@@ -12,7 +12,7 @@
         <el-form-item prop="username">
           <el-input
             v-model="form.username"
-            placeholder="用户名"
+            :placeholder="t('login.username')"
             size="large"
             :prefix-icon="User"
           />
@@ -22,7 +22,7 @@
           <el-input
             v-model="form.password"
             type="password"
-            placeholder="密码"
+            :placeholder="t('login.password')"
             size="large"
             :prefix-icon="Lock"
             show-password
@@ -37,7 +37,7 @@
             style="width: 100%"
             native-type="submit"
           >
-            登录
+            {{ t('login.submit') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -46,13 +46,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import type { FormInstance, FormRules } from 'element-plus'
 
+const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
@@ -65,10 +67,10 @@ const form = reactive({
   password: '',
 })
 
-const rules: FormRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-}
+const rules = computed<FormRules>(() => ({
+  username: [{ required: true, message: t('login.usernameRequired'), trigger: 'blur' }],
+  password: [{ required: true, message: t('login.passwordRequired'), trigger: 'blur' }],
+}))
 
 const handleLogin = async () => {
   const valid = await formRef.value?.validate()
@@ -78,14 +80,14 @@ const handleLogin = async () => {
   try {
     const success = await userStore.login(form.username, form.password)
     if (success) {
-      ElMessage.success('登录成功')
+      ElMessage.success(t('login.success'))
       const redirect = getSafeRedirect(route.query.redirect as string)
       router.push(redirect)
     } else {
-      ElMessage.error('用户名或密码错误')
+      ElMessage.error(t('login.error'))
     }
   } catch {
-    ElMessage.error('登录失败，请稍后重试')
+    ElMessage.error(t('login.errorRetry'))
   } finally {
     loading.value = false
   }
