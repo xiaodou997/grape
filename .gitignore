@@ -21,7 +21,6 @@ node_modules/
 
 # Build outputs
 /dist
-/web/dist
 
 # Logs
 log/
@@ -128,8 +127,6 @@ coverage/
 *.swagger.json
 
 # Generated files
-internal/web/dist/
-web/dist/
 bin/
 
 # OS generated files
@@ -247,3 +244,13 @@ dist/
 
 # Built time
 .built
+
+# Allow .gitkeep in dist directories
+
+# Built web/dist
+internal/web/dist/
+web/dist/
+
+# But keep .gitkeep files
+!internal/web/dist/.gitkeep
+!web/dist/.gitkeep

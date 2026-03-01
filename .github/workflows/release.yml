@@ -6,29 +6,203 @@ on:
       - "v*"
 
 jobs:
-  release:
-    name: Build & Release Binaries
+  # 生成 Changelog
+  changelog:
+    name: Generate Changelog
     runs-on: ubuntu-latest
+    outputs:
+      changelog: ${{ steps.changelog.outputs.changelog }}
+      contributors: ${{ steps.contributors.outputs.contributors }}
+      commit_count: ${{ steps.stats.outputs.commit_count }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          # 获取上一个 tag 和当前 tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          CURRENT_TAG=${GITHUB_REF#refs/tags/}
+          
+          echo "Previous tag: $PREV_TAG"
+          echo "Current tag: $CURRENT_TAG"
+          
+          # 获取提交历史
+          if [ -z "$PREV_TAG" ]; then
+            echo "No previous tag found, getting last 50 commits"
+            COMMITS=$(git log --pretty=format:"%s" -n 50)
+          else
+            echo "Getting commits from $PREV_TAG to $CURRENT_TAG"
+            COMMITS=$(git log --pretty=format:"%s" "$PREV_TAG..HEAD")
+          fi
+          
+          # 初始化各个类别
+          FEATS=""
+          FIXES=""
+          DOCS=""
+          STYLES=""
+          REFACTORS=""
+          PERFS=""
+          TESTS=""
+          BUILDS=""
+          CI=""
+          CHORES=""
+          REVERTS=""
+          
+          # 处理每个提交
+          while IFS= read -r COMMIT; do
+            # 跳过空行
+            [ -z "$COMMIT" ] && continue
+            
+            # 根据 commit message 分类
+            case "$COMMIT" in
+              feat:*) FEATS="$FEATS\n* $COMMIT" ;;
+              fix:*) FIXES="$FIXES\n* $COMMIT" ;;
+              docs:*) DOCS="$DOCS\n* $COMMIT" ;;
+              style:*) STYLES="$STYLES\n* $COMMIT" ;;
+              refactor:*) REFACTORS="$REFACTORS\n* $COMMIT" ;;
+              perf:*) PERFS="$PERFS\n* $COMMIT" ;;
+              test:*) TESTS="$TESTS\n* $COMMIT" ;;
+              build:*) BUILDS="$BUILDS\n* $COMMIT" ;;
+              ci:*) CI="$CI\n* $COMMIT" ;;
+              chore:*) CHORES="$CHORES\n* $COMMIT" ;;
+              revert:*) REVERTS="$REVERTS\n* $COMMIT" ;;
+              *) 
+                # 其他提交，检查是否包含关键词
+                if echo "$COMMIT" | grep -qi "add\|new\|create"; then
+                  FEATS="$FEATS\n* $COMMIT"
+                elif echo "$COMMIT" | grep -qi "fix\|bug\|issue"; then
+                  FIXES="$FIXES\n* $COMMIT"
+                else
+                  CHORES="$CHORES\n* $COMMIT"
+                fi
+                ;;
+            esac
+          done <<< "$COMMITS"
+          
+          # 构建结构化的 changelog
+          CHANGELOG=""
+          
+          [ ! -z "$FEATS" ] && CHANGELOG="$CHANGELOG\n\n### 🚀 新功能\n$FEATS"
+          [ ! -z "$FIXES" ] && CHANGELOG="$CHANGELOG\n\n### 🐛 Bug 修复\n$FIXES"
+          [ ! -z "$PERFS" ] && CHANGELOG="$CHANGELOG\n\n### ⚡ 性能优化\n$PERFS"
+          [ ! -z "$REFACTORS" ] && CHANGELOG="$CHANGELOG\n\n### 🔨 重构\n$REFACTORS"
+          [ ! -z "$DOCS" ] && CHANGELOG="$CHANGELOG\n\n### 📚 文档更新\n$DOCS"
+          [ ! -z "$TESTS" ] && CHANGELOG="$CHANGELOG\n\n### 🧪 测试\n$TESTS"
+          [ ! -z "$BUILDS" ] && CHANGELOG="$CHANGELOG\n\n### 🏗️ 构建\n$BUILDS"
+          [ ! -z "$CI" ] && CHANGELOG="$CHANGELOG\n\n### 🔄 CI/CD\n$CI"
+          [ ! -z "$REVERTS" ] && CHANGELOG="$CHANGELOG\n\n### ↩️ 回滚\n$REVERTS"
+          [ ! -z "$CHORES" ] && CHANGELOG="$CHANGELOG\n\n### 📝 其他\n$CHORES"
+          
+          # 如果没有内容，显示默认信息
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="\n\n### 📝 本次版本包含了一些小的优化和修复。"
+          fi
+          
+          # 添加版本信息和统计
+          HEADER="## 📦 版本信息\n\n**版本号**: \`$CURRENT_TAG\`\n**发布日期**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')\n"
+          
+          # 统计提交数量
+          COMMIT_COUNT=$(echo -e "$COMMITS" | wc -l | tr -d ' ')
+          STATS="\n\n---\n\n## 📊 统计信息\n\n**提交数量**: $COMMIT_COUNT\n"
+          
+          # 合并所有内容
+          FULL_CHANGELOG="$HEADER$STATS$CHANGELOG"
+          
+          # 安全地设置多行输出
+          DELIMITER=$(openssl rand -hex 16)
+          {
+            echo "changelog<<$DELIMITER"
+            echo -e "$FULL_CHANGELOG"
+            echo "$DELIMITER"
+          } >> $GITHUB_OUTPUT
+          
+          echo "Generated structured changelog"
+
+      - name: Get Contributors
+        id: contributors
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          CURRENT_TAG=${GITHUB_REF#refs/tags/}
+          
+          if [ -z "$PREV_TAG" ]; then
+            CONTRIBUTORS=$(git log --pretty=format:"%an" -n 50 | sort -u | grep -v "dependabot\|github-actions" | head -n 10)
+          else
+            CONTRIBUTORS=$(git log --pretty=format:"%an" "$PREV_TAG..HEAD" | sort -u | grep -v "dependabot\|github-actions" | head -n 10)
+          fi
+          
+          # 格式化为列表
+          CONTRIBUTOR_LIST=""
+          while IFS= read -r contributor; do
+            [ -z "$contributor" ] && continue
+            CONTRIBUTOR_LIST="$CONTRIBUTOR_LIST\n* @$contributor"
+          done <<< "$CONTRIBUTORS"
+          
+          if [ -z "$CONTRIBUTOR_LIST" ]; then
+            CONTRIBUTOR_LIST="* 感谢所有贡献者！"
+          fi
+          
+          DELIMITER=$(openssl rand -hex 16)
+          {
+            echo "contributors<<$DELIMITER"
+            echo -e "$CONTRIBUTOR_LIST"
+            echo "$DELIMITER"
+          } >> $GITHUB_OUTPUT
+
+      - name: Get Stats
+        id: stats
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          CURRENT_TAG=${GITHUB_REF#refs/tags/}
+          
+          if [ -z "$PREV_TAG" ]; then
+            COMMIT_COUNT=$(git log --pretty=format:"%s" -n 50 | wc -l | tr -d ' ')
+          else
+            COMMIT_COUNT=$(git log --pretty=format:"%s" "$PREV_TAG..HEAD" | wc -l | tr -d ' ')
+          fi
+          
+          echo "commit_count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
+
+  # 构建和发布
+  build:
+    name: Build & Release Binaries
+    needs: changelog
     permissions:
       contents: write
+      discussions: write
 
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - goos: linux
+          # Linux builds - 使用 ubuntu runner
+          - os: ubuntu-latest
+            goos: linux
             goarch: amd64
-          - goos: linux
+          - os: ubuntu-latest
+            goos: linux
             goarch: arm64
-          - goos: darwin
+          # macOS builds - 使用 macos runner
+          - os: macos-latest
+            goos: darwin
             goarch: amd64
-          - goos: darwin
+          - os: macos-latest
+            goos: darwin
             goarch: arm64
-          - goos: windows
+          # Windows builds - 使用 windows runner
+          - os: windows-latest
+            goos: windows
             goarch: amd64
             ext: .exe
 
+    runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -44,32 +218,95 @@ jobs:
           cache-dependency-path: web/package-lock.json
 
       - name: Build frontend
+        shell: bash
         working-directory: web
-        run: npm ci && npm run build
-
-      - name: Install CGO dependencies
-        if: matrix.goos == 'linux'
         run: |
-          if [ "${{ matrix.goarch }}" = "arm64" ]; then
-            sudo apt-get install -y gcc-aarch64-linux-gnu
-          else
-            sudo apt-get install -y gcc
+          echo "Installing dependencies..."
+          npm ci
+          echo "Building frontend..."
+          npm run build
+          echo "Verifying dist directory..."
+          ls -la dist/
+          echo "Copying to internal/web/dist..."
+          rm -rf ../internal/web/dist
+          cp -r dist ../internal/web/dist/
+          echo "Build completed successfully"
+
+      - name: Verify frontend build
+        shell: bash
+        run: |
+          echo "Checking internal/web/dist contents..."
+          ls -la internal/web/dist/
+          if [ ! -f "internal/web/dist/index.html" ]; then
+            echo "::error::Frontend build failed: index.html not found"
+            exit 1
           fi
+          echo "Frontend build verified successfully"
+
+      - name: Install cross-compiler for Linux ARM64
+        if: matrix.goos == 'linux' && matrix.goarch == 'arm64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
 
       - name: Build binary
+        shell: bash
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
-          CGO_ENABLED: 1
-          CC: ${{ matrix.goarch == 'arm64' && matrix.goos == 'linux' && 'aarch64-linux-gnu-gcc' || 'gcc' }}
+          CGO_ENABLED: ${{ (matrix.goos != 'windows') && '1' || '0' }}
+          CC: ${{ matrix.goos == 'linux' && matrix.goarch == 'arm64' && 'aarch64-linux-gnu-gcc' || '' }}
         run: |
           OUTPUT="grape-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}"
           go build -ldflags="-s -w -X main.version=${{ github.ref_name }}" \
             -o "$OUTPUT" ./cmd/grape
           echo "OUTPUT=$OUTPUT" >> $GITHUB_ENV
+          echo "Built: $OUTPUT ($(du -h "$OUTPUT" | cut -f1))"
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
+          name: Release ${{ github.ref_name }}
+          body: |
+            ${{ needs.changelog.outputs.changelog }}
+            
+            ---
+            
+            ## 👥 贡献者
+            
+            ${{ needs.changelog.outputs.contributors }}
+            
+            ---
+            
+            ## 📦 下载说明
+            
+            | 平台 | 架构 | 文件名 |
+            |------|------|--------|
+            | Linux | x86_64 | grape-linux-amd64 |
+            | Linux | ARM64 | grape-linux-arm64 |
+            | macOS | Intel | grape-darwin-amd64 |
+            | macOS | Apple Silicon | grape-darwin-arm64 |
+            | Windows | x86_64 | grape-windows-amd64.exe |
+            
+            ### 快速开始
+            
+            \`\`\`bash
+            # 下载
+            curl -sL https://github.com/graperegistry/grape/releases/latest/download/grape-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }} -o grape${{ matrix.ext }}
+            chmod +x grape${{ matrix.ext }}
+            
+            # 运行
+            ./grape${{ matrix.ext }}
+            \`\`\`
+            
+            ### 验证
+            
+            \`\`\`bash
+            # 查看版本
+            ./grape${{ matrix.ext }} --version
+            \`\`\`
+          generate_release_notes: false
           files: ${{ env.OUTPUT }}
-          generate_release_notes: true
+          make_latest: true
+          discussion_category_name: Announcements
+          prerelease: false

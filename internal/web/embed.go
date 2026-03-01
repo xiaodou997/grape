@@ -38,3 +38,8 @@ func Exists(name string) bool {
 	_, err := fs.Stat(distFS, "dist"+name)
 	return err == nil
 }
+
+// GetEmbedFS 返回原始的 embed.FS（用于调试）
+func GetEmbedFS() embed.FS {
+	return distFS
+}

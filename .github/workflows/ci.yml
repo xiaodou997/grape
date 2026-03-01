@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: [main]
+    tags-ignore: [v*]  # 忽略 tag 推送
   pull_request:
     branches: [main]
 

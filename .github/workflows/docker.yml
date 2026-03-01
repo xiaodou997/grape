@@ -1,9 +1,23 @@
 name: Docker
 
 on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+  workflow_dispatch:  # 仅手动触发
+    inputs:
+      version:
+        description: '镜像版本标签 (例如：v0.1.0, latest)'
+        required: true
+        default: 'latest'
+        type: string
+      push_to_registry:
+        description: '推送到 GitHub Container Registry'
+        required: true
+        type: boolean
+        default: true
+      build_platforms:
+        description: '构建平台 (逗号分隔)'
+        required: true
+        default: 'linux/amd64,linux/arm64'
+        type: string
 
 jobs:
   build-and-push:
@@ -32,16 +46,39 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=ref,event=branch
-            type=sha,prefix=sha-
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ inputs.version }}
+            type=raw,value=latest,enable=${{ inputs.version == 'latest' }}
 
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: true
+          push: ${{ inputs.push_to_registry }}
+          platforms: ${{ inputs.build_platforms }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # 如果不推送，只导出到本地
+          outputs: ${{ !inputs.push_to_registry && 'type=docker' || '' }}
+
+      - name: Print image info
+        if: always()
+        run: |
+          echo "========================================="
+          echo "🐳 Docker Image Information"
+          echo "========================================="
+          echo "Repository: ghcr.io/${{ github.repository }}"
+          echo "Tags: ${{ steps.meta.outputs.tags }}"
+          echo "Pushed: ${{ inputs.push_to_registry }}"
+          echo "Platforms: ${{ inputs.build_platforms }}"
+          echo ""
+          if [ "${{ inputs.push_to_registry }}" = "true" ]; then
+            echo "Pull command:"
+            echo "  docker pull ghcr.io/${{ github.repository }}:${{ inputs.version }}"
+          else
+            echo "Image built locally (not pushed)"
+            echo "Run command:"
+            echo "  docker run -d --name grape -p 4873:4873 ghcr.io/${{ github.repository }}:${{ inputs.version }}"
+          fi
+          echo "========================================="
