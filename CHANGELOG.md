@@ -14,10 +14,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change password functionality in user menu
 - Frontend asset validation in build process
 - Handler unit tests for authentication
+- API response types in `pkg/apierr/types.go`
+- CI format check with gofmt
 
 ### Fixed
 - CSP policy to allow external HTTPS images in package README
 - CSP policy to allow vue-i18n compatibility (unsafe-eval)
+- CORS configuration for API port (4874)
+- Double port routing issues resolved
+
+### Changed
+- Updated .ai/project-context.md with current status
+- Updated .ai/roadmap.md marking Week 1-2 tasks complete
+- Updated .ai/tech-debt.md marking P0/P1 debts resolved
 
 ## [0.1.0] - 2024-03-01
 

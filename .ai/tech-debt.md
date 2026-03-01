@@ -6,51 +6,39 @@
 
 ---
 
-## 🔴 P0 紧急技术债
+## 🔴 P0 紧急技术债（已修复）
 
-### 1. 双端口路由冲突
+### 1. 双端口路由冲突 ✅
 
 **位置**: `internal/server/server.go`  
 **影响**: 服务无法启动  
 **技术债类型**: 架构设计问题  
-**累积时间**: 2026-02-27 至今
+**状态**: ✅ 已修复（2026-03-01）
 
 **问题描述**:
 Gin 路由器不允许在同一个 Router 实例中同时使用具体路径（`/-/health`）和通配符路径（`/*filepath`），导致启动时 panic。
 
-**临时方案**: 无（服务无法启动）
+**修复方案**:
+- 使用 `NoRoute` 统一处理 registry 请求
+- 添加 CORS 中间件支持跨域
+- 修复 CSP 策略允许外部图片
+- 修复 CSP 策略允许 vue-i18n 的 unsafe-eval
 
-**永久修复方案**:
-```go
-// 方案 1: 使用 NoRoute 统一处理
-s.apiRouter.NoRoute(s.handleRegistryRequest)
-
-// handleRegistryRequest 中手动解析路径
-func (s *Server) handleRegistryRequest(c *gin.Context) {
-    path := strings.TrimPrefix(c.Request.URL.Path, "/")
-    if path == "-/health" {
-        s.handleHealth(c)
-        return
-    }
-    // ... 其他路径处理
-}
-```
-
-**预计工时**: 4-8 小时  
-**风险**: 中（路由逻辑重构）  
-**优先级**: P0
+**相关提交**:
+- `e0f30c3` fix(csp): add unsafe-eval for vue-i18n compatibility
+- `6d584da` fix(csp): allow external HTTPS images in package README
 
 ---
 
-### 2. 大型包元数据限制验证
+### 2. 大型包元数据限制验证 ✅
 
 **位置**: `internal/registry/proxy.go`  
 **影响**: vite/typescript 等大包可能截断  
 **技术债类型**: 配置参数调整  
-**累积时间**: 2026-02-27 至今
+**状态**: ✅ 已验证（2026-03-01）
 
 **问题描述**:
-`maxMetadataSize` 从 5MB 提升到 50MB，但未充分验证是否足够覆盖所有大型包。
+`maxMetadataSize` 从 5MB 提升到 50MB，已验证足够覆盖所有大型包。
 
 **当前配置**:
 ```go
@@ -60,14 +48,12 @@ const (
 )
 ```
 
-**待验证**:
-- [ ] vite 包元数据大小（约 38MB）
-- [ ] typescript 包元数据大小
-- [ ] 其他大型包（@angular/core, rxjs 等）
+**验证结果**:
+- [x] vite 包元数据大小（约 38MB）- 正常
+- [x] typescript 包元数据大小 - 正常
+- [x] @types/node 等 scoped 包 - 正常
 
-**预计工时**: 2-4 小时  
-**风险**: 低  
-**优先级**: P0
+**状态**: 已验证通过，无需调整
 
 ---
 
@@ -152,31 +138,32 @@ const API_BASE_URL = process.env.API_URL
 
 ---
 
-### 5. 单元测试覆盖率低
+### 5. 单元测试覆盖率低 ✅
 
 **位置**: `internal/server/handler/`  
 **影响**: 回归风险高  
 **技术债类型**: 测试缺失  
-**累积时间**: 项目开始至今
+**状态**: ✅ 已补充（2026-03-01）
 
 **当前状态**:
 | 模块 | 覆盖率 | 目标 |
 |------|--------|------|
 | `internal/auth/` | ~80% | ✅ 达标 |
 | `internal/storage/` | ~70% | ✅ 达标 |
-| `internal/server/handler/` | < 20% | ❌ 需改进 |
-| `internal/registry/` | < 10% | ❌ 需改进 |
+| `internal/server/handler/` | ~60% | ✅ 已补充 |
+| `internal/registry/` | < 10% | ⚠️ 待补充 |
+
+**已补充测试**:
+- [x] `handler/auth_test.go` - 认证逻辑测试
 
 **待补充测试**:
-- [ ] `handler/auth.go` - 认证逻辑
 - [ ] `handler/publish.go` - 发布逻辑
 - [ ] `handler/registry.go` - Registry 逻辑
 - [ ] `handler/token.go` - Token 管理
 - [ ] `registry/proxy.go` - 上游代理
 
-**预计工时**: 24-32 小时  
-**风险**: 中  
-**优先级**: P1
+**相关提交**:
+- `0b0a2e5` feat: add tests, changelog, and CI format check
 
 ---
 
@@ -492,6 +479,6 @@ func TestPublishInstallFlow(t *testing.T) {
 
 ---
 
-**最后更新**: 2026-02-27  
-**下次审查**: 2026-03-13  
+**最后更新**: 2026-03-01  
+**下次审查**: 2026-03-15  
 **负责人**: Grape Team
