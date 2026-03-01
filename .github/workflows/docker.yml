@@ -1,7 +1,10 @@
 name: Docker
 
 on:
-  workflow_dispatch:  # 仅手动触发
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
     inputs:
       version:
         description: '镜像版本标签 (例如：v0.1.0, latest)'
@@ -30,6 +33,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build frontend
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+          rm -rf ../internal/web/dist
+          cp -r dist ../internal/web/dist/
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -40,45 +58,52 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # Tag push: use tag name
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            # Manual trigger: use input
+            VERSION=${{ inputs.version }}
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=raw,value=${{ inputs.version }}
-            type=raw,value=latest,enable=${{ inputs.version == 'latest' }}
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=latest
 
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: ${{ inputs.push_to_registry }}
-          platforms: ${{ inputs.build_platforms }}
+          push: ${{ github.event_name == 'push' || inputs.push_to_registry }}
+          platforms: ${{ github.event_name == 'push' && 'linux/amd64,linux/arm64' || inputs.build_platforms }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          # 如果不推送，只导出到本地
-          outputs: ${{ !inputs.push_to_registry && 'type=docker' || '' }}
 
       - name: Print image info
         if: always()
         run: |
           echo "========================================="
-          echo "🐳 Docker Image Information"
+          echo "🐳 Docker Image Built Successfully"
           echo "========================================="
-          echo "Repository: ghcr.io/${{ github.repository }}"
-          echo "Tags: ${{ steps.meta.outputs.tags }}"
-          echo "Pushed: ${{ inputs.push_to_registry }}"
-          echo "Platforms: ${{ inputs.build_platforms }}"
+          echo "Image: ghcr.io/${{ github.repository }}"
+          echo "Version: ${{ steps.version.outputs.version }}"
+          echo "Platforms: linux/amd64, linux/arm64"
           echo ""
-          if [ "${{ inputs.push_to_registry }}" = "true" ]; then
-            echo "Pull command:"
-            echo "  docker pull ghcr.io/${{ github.repository }}:${{ inputs.version }}"
-          else
-            echo "Image built locally (not pushed)"
-            echo "Run command:"
-            echo "  docker run -d --name grape -p 4873:4873 ghcr.io/${{ github.repository }}:${{ inputs.version }}"
-          fi
+          echo "Pull command:"
+          echo "  docker pull ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}"
+          echo ""
+          echo "Run command:"
+          echo "  docker run -d --name grape -p 4873:4873 -p 4874:4874 ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}"
           echo "========================================="
