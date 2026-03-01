@@ -172,19 +172,21 @@ git tag v1.0.0 && git push origin v1.0.0
 git tag beta-v1.0.0 && git push origin beta-v1.0.0
 ```
 
-## 🆚 Comparison with Verdaccio
+## 💡 Why Grape
 
-| Aspect | Grape | Verdaccio |
-|--------|-------|-----------|
-| Tech Stack | Go | Node.js |
-| Memory Usage | < 10MB | ~ 50MB |
-| Deployment | Single binary | npm install |
-| Multi-Upstream | ✅ By scope | ❌ Single upstream |
-| Data Persistence | ✅ SQLite | ❌ File system |
-| Auth Model | JWT + Database | Config file ACL |
-| Web UI | Vue 3 + Element Plus | Built-in simple UI |
-| Prometheus Metrics | ✅ Built-in | ❌ Requires plugin |
-| CI/CD Tokens | ✅ Built-in | ❌ Requires plugin |
+| Feature | Description |
+|---------|-------------|
+| 🚀 **Single Binary** | Written in Go, no runtime dependencies |
+| 🪶 **Lightweight** | Memory usage < 10MB, minimal footprint |
+| 🔀 **Multi-Upstream** | Route packages by scope to different registries |
+| 💾 **Data Persistence** | SQLite database, survives restarts |
+| 🔐 **Modern Auth** | JWT authentication with database-backed users |
+| 🎫 **CI/CD Tokens** | Dedicated tokens for automated publishing |
+| 🌐 **Modern Web UI** | Vue 3 + Element Plus admin interface |
+| 📊 **Prometheus Ready** | Built-in metrics for monitoring |
+| 💾 **Backup & Restore** | Export/import data via Web UI or CLI |
+| 🔒 **Package ACL** | Fine-grained access control per package |
+| 🗑️ **Garbage Collection** | Clean up old versions automatically |
 
 ## 🗂️ Project Structure
 
