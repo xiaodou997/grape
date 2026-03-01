@@ -105,28 +105,72 @@ cd ..
 
 ### 5. 运行开发环境
 
+Grape 采用前后端分离架构，开发时需要分别运行：
+
+#### 方式一：同时运行前后端（推荐）
+
 ```bash
-# 方式一：分别启动前后端
-# 终端 1 - 后端
-make run
-
-# 终端 2 - 前端
-cd web
-npm run dev
-
-# 方式二：使用 Makefile 一键启动
 make dev
 ```
+
+这会启动两个服务：
+- **前端**: http://localhost:3000 (Vite 开发服务器)
+- **后端**: http://localhost:4873 (Air 热重载 Go 代码)
+- **API**: http://localhost:4874 (npm registry API)
+
+**注意**: 前端会代理 API 请求到后端，所以直接访问 3000 端口即可。
+
+#### 方式二：只运行后端（开发 API）
+
+```bash
+make dev-backend
+```
+
+适合只修改后端代码时使用。访问 http://localhost:4873 查看效果。
+
+#### 方式三：只运行前端（开发 UI）
+
+```bash
+# 终端 1 - 先启动后端提供 API
+make dev-backend
+
+# 终端 2 - 启动前端
+make dev-frontend
+```
+
+适合只修改前端代码时使用。访问 http://localhost:3000 查看效果。
 
 ### 6. 验证安装
 
 ```bash
-# 访问后端
+# 检查后端健康状态
 curl http://localhost:4873/-/health
 
-# 访问前端
+# 检查 API 状态
+curl http://localhost:4874/-/health
+
+# 在浏览器中访问前端
 open http://localhost:3000
 ```
+
+### 7. 常见问题
+
+**Q: 修改前端代码后页面没有更新？**
+
+A: 请确保：
+1. 访问的是 http://localhost:3000（Vite 开发服务器），不是 4873
+2. 浏览器开发者工具的 Network 选项卡中关闭了缓存
+3. 如果仍有问题，尝试刷新页面
+
+**Q: 修改后端代码后 API 没有更新？**
+
+A: `make dev` 使用 Air 进行热重载，修改 Go 代码后会自动重启。如果未生效：
+1. 检查终端是否有编译错误
+2. 手动停止并重新运行 `make dev-backend`
+
+**Q: 前端访问 API 报错 404？**
+
+A: 确保后端服务已启动（端口 4873）。Vite 配置会自动代理 `/api` 请求到后端。
 
 ---
 

@@ -17,7 +17,6 @@ export default defineConfig({
         target: 'http://localhost:4873',
         changeOrigin: true,
       },
-      // Proxy npm registry requests to Grape
       '^/(?!@vite|@fs|node_modules|src)': {
         target: 'http://localhost:4873',
         changeOrigin: true,

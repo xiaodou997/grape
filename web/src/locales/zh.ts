@@ -33,7 +33,7 @@ export default {
     default: '默认',
     hours: '小时',
     empty: '空',
-    saveSuccess: '保存成功',
+    saveSuccess: '保存成功'
   },
   nav: {
     home: '首页',
@@ -50,7 +50,7 @@ export default {
     login: '登录',
     changePassword: '修改密码',
     github: 'GitHub 仓库',
-    language: '语言',
+    language: '语言'
   },
   login: {
     title: 'Grape 登录',
@@ -61,7 +61,7 @@ export default {
     submit: '登录',
     success: '登录成功',
     error: '用户名或密码错误',
-    errorRetry: '登录失败，请稍后重试',
+    errorRetry: '登录失败，请稍后重试'
   },
   home: {
     heroTitle: 'Grape',
@@ -73,7 +73,7 @@ export default {
       localPackages: '本地包数量',
       cachedPackages: '缓存包数量',
       storageSize: '存储占用',
-      loadError: '加载统计数据失败',
+      loadError: '加载统计数据失败'
     },
     recentActivity: '最近活动',
     viewAll: '查看全部',
@@ -82,43 +82,45 @@ export default {
       users: '用户管理',
       tokens: 'CI/CD Token',
       backup: '备份恢复',
-      settings: '系统设置',
+      settings: '系统设置'
     },
     whyGrape: '为什么选择 Grape？',
     features: {
       adminPanel: {
         title: '全功能管理后台',
-        desc: '国际化界面、用户管理、Token管理和审计日志。',
+        desc: '国际化界面、用户管理、Token管理和审计日志。'
       },
       enterpriseSecurity: {
         title: '企业级安全',
-        desc: 'JWT认证、包级权限控制、CI/CD Token和操作审计。',
+        desc: 'JWT认证、包级权限控制、CI/CD Token和操作审计。'
       },
       smartData: {
         title: '智能数据管理',
-        desc: '多上游代理、自动缓存、备份恢复和垃圾回收。',
-      },
+        desc: '多上游代理、自动缓存、备份恢复和垃圾回收。'
+      }
     },
     guide: {
       step1: '1. 配置 npm 使用 Grape',
       step2: '2. 安装包',
       step3: '3. 发布私有包',
-      step4: '4. 恢复默认源',
+      step4: '4. 恢复默认源'
     },
     localPackages: '本地包数量',
     cachedPackages: '缓存包数量',
     storageUsed: '存储占用',
     feature1Title: '极速部署',
-    feature1Desc: '单一二进制文件，无需安装 Node.js，无需 npm install。下载即用，开箱即部署。',
+    feature1Desc:
+      '单一二进制文件，无需安装 Node.js，无需 npm install。下载即用，开箱即部署。',
     feature2Title: '安全可控',
-    feature2Desc: '私有包完全隔离，精细的权限控制，完整的审计日志，企业级安全保障。',
+    feature2Desc:
+      '私有包完全隔离，精细的权限控制，完整的审计日志，企业级安全保障。',
     feature3Title: '智能代理',
     feature3Desc: '自动缓存公共包，加速团队开发。支持多上游源，灵活配置。',
     quickStartTitle: '快速开始',
     step1: '1. 配置 npm 使用 Grape',
     step2: '2. 安装包',
     step3: '3. 发布私有包',
-    step4: '4. 恢复默认源',
+    step4: '4. 恢复默认源'
   },
   packages: {
     title: '包列表',
@@ -144,7 +146,7 @@ export default {
     deprecationReason: '废弃原因',
     owners: '维护者',
     addOwner: '添加维护者',
-    removeOwner: '移除维护者',
+    removeOwner: '移除维护者'
   },
   admin: {
     title: '管理后台',
@@ -168,8 +170,8 @@ export default {
       operations: '运维管理',
       config: '系统配置',
       integrations: '集成',
-      monitoring: '监控',
-    },
+      monitoring: '监控'
+    }
   },
   users: {
     title: '用户管理',
@@ -197,7 +199,7 @@ export default {
     confirmPasswordRequired: '请确认新密码',
     passwordMinLength: '密码至少6位',
     passwordChanged: '密码修改成功',
-    passwordChangeFailed: '密码修改失败',
+    passwordChangeFailed: '密码修改失败'
   },
   tokens: {
     title: 'CI/CD Token',
@@ -216,7 +218,7 @@ export default {
     tokenCopied: 'Token 已复制到剪贴板',
     tokenWarning: '请立即保存此 Token，关闭后将无法再次查看。',
     lastUsed: '最后使用',
-    never: '从未使用',
+    never: '从未使用'
   },
   backup: {
     title: '备份恢复',
@@ -233,7 +235,7 @@ export default {
     backupList: '备份历史',
     noBackups: '暂无备份',
     selectFile: '选择备份文件',
-    dragDrop: '将文件拖到此处，或点击选择',
+    dragDrop: '将文件拖到此处，或点击选择'
   },
   gc: {
     title: '垃圾回收',
@@ -256,7 +258,7 @@ export default {
     gcComplete: '垃圾回收完成',
     deprecatePackage: '废弃包',
     deprecateReason: '废弃原因',
-    undeprecate: '取消废弃',
+    undeprecate: '取消废弃'
   },
   webhooks: {
     title: 'Webhook 管理',
@@ -285,7 +287,7 @@ export default {
     urlRequired: '请输入 URL',
     urlInvalid: '请输入正确的 URL',
     noWebhooks: '暂无 Webhook',
-    lastDelivery: '最后投递',
+    lastDelivery: '最后投递'
   },
   settings: {
     title: '系统设置',
@@ -312,7 +314,7 @@ export default {
     upstreamExampleTitle: '配置示例',
     upstreamExample1: '使用 npm 官方源作为默认上游',
     upstreamExample2: '使用淘宝镜像作为默认上游',
-    upstreamExample3: '公司内部包使用私有源',
+    upstreamExample3: '公司内部包使用私有源'
   },
   audit: {
     title: '审计日志',
@@ -334,7 +336,7 @@ export default {
     actionTokenDelete: '删除 Token',
     actionWebhookCreate: '创建 Webhook',
     actionWebhookUpdate: '更新 Webhook',
-    actionWebhookDelete: '删除 Webhook',
+    actionWebhookDelete: '删除 Webhook'
   },
   errors: {
     networkError: '网络错误，请重试',
@@ -346,7 +348,7 @@ export default {
     loadFailed: '加载失败',
     saveFailed: '保存失败',
     deleteFailed: '删除失败',
-    testFailed: '测试失败',
+    testFailed: '测试失败'
   },
   guide: {
     title: '使用指南',
@@ -371,38 +373,42 @@ export default {
       publishBeta: '发布 beta 版本',
       unpublishVersion: '删除特定版本',
       unpublishAll: '删除整个包（谨慎操作）',
-      publishConfigHint: '在 package.json 中配置 publishConfig 可以省略 --registry 参数',
+      publishConfigHint:
+        '在 package.json 中配置 publishConfig 可以省略 --registry 参数'
     },
     pnpm: {
       configDesc: '设置全局默认源',
       configRestore: '恢复官方源',
       scopeConfig: '仅设置特定 scope 的源（推荐）',
-      configList: '查看当前配置',
+      configList: '查看当前配置'
     },
     yarn: {
       configV1Title: '配置源 (Yarn v1)',
       configV2Title: '配置源 (Yarn v2+/berry)',
       configV2: 'Yarn v2+/berry 配置',
-      scopeConfigV2: '设置特定 scope 的源',
+      scopeConfigV2: '设置特定 scope 的源'
     },
     bun: {
       warning: '注意',
-      warningDesc: 'bun 不支持 bun config set 命令，需要通过 bunfig.toml 配置文件或环境变量配置',
+      warningDesc:
+        'bun 不支持 bun config set 命令，需要通过 bunfig.toml 配置文件或环境变量配置',
       configMethod1: '方式一：使用 bunfig.toml 配置文件（推荐）',
       configProject: '在项目根目录创建 bunfig.toml',
       configGlobal: '全局配置：~/.bunfig.toml 或 $XDG_CONFIG_HOME/.bunfig.toml',
       configMethod2: '方式二：使用环境变量',
       configMethod3: '方式三：安装时指定源',
       noScopeConfig: 'bun 目前不支持 scope 级别的 registry 配置',
-      viewConfig: '查看当前配置',
+      viewConfig: '查看当前配置'
     },
     projectConfig: '项目级配置 (.npmrc)',
-    projectConfigDesc: '在项目根目录创建 .npmrc 文件，配置跟随项目，团队成员无需手动配置：',
+    projectConfigDesc:
+      '在项目根目录创建 .npmrc 文件，配置跟随项目，团队成员无需手动配置：',
     packageJson: 'package.json 发布配置',
-    packageJsonDesc: '在 package.json 中配置 publishConfig，发布时无需指定 --registry：',
+    packageJsonDesc:
+      '在 package.json 中配置 publishConfig，发布时无需指定 --registry：',
     commandTable: '命令速查表',
     operation: '操作',
     setRegistry: '设置源',
-    restoreRegistry: '恢复默认源',
-  },
+    restoreRegistry: '恢复默认源'
+  }
 }

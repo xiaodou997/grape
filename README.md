@@ -212,29 +212,31 @@ grape/
 ## 🛠️ Development
 
 ```bash
-# Development mode with hot reload (frontend + backend)
-# Frontend: http://localhost:3000 (Vite)
+# Run both frontend and backend (separate processes)
+# Frontend: http://localhost:3000 (Vite dev server)
 # Backend:  http://localhost:4873 (Air)
 make dev
 
-# Build backend only
-make build-only
+# Run only backend (for API development)
+make dev-backend
 
-# Build frontend
-make build-frontend
+# Run only frontend (for UI development)
+make dev-frontend
 
-# Full build
-make build
+# Build commands
+make build-frontend  # Build frontend only
+make build          # Build both frontend and backend
+make build-only     # Build backend only (requires built frontend)
 
 # Run tests
 make test
 ```
 
-**Development mode features:**
-- 🔄 Frontend hot reload (Vite) - instant updates on Vue/TS changes
-- 🔄 Backend hot reload (Air) - auto rebuild on Go changes
-- 🌐 Access frontend at `http://localhost:3000` for development
+**Development mode:**
+- 🔄 Backend auto-reload (Air) - auto rebuild on Go changes
+- 🌐 Frontend dev server at `http://localhost:3000`
 - 📡 API requests proxy to backend automatically
+- 📖 See [Development Guide](docs/DEVELOPMENT.md) for details
 
 ## 📚 Documentation
 

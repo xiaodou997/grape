@@ -61,24 +61,50 @@ lint:
 fmt:
 	go fmt ./...
 
-# 开发模式 - 前后端热重载
+# 开发模式 - 前后端分离运行
 # 需要安装 air: go install github.com/air-verse/air@latest
+AIR_BIN := $(shell go env GOPATH)/bin/air
+
+# 只运行后端（使用 Air 热重载 Go 代码）
+dev-backend:
+	@echo "========================================="
+	@echo "  Grape Backend (Air)"
+	@echo "========================================="
+	@echo "Web UI:      http://localhost:4873"
+	@echo "API Port:    http://localhost:4874"
+	@echo "========================================="
+	@if [ ! -f "$(AIR_BIN)" ]; then \
+		echo "Installing air..."; \
+		go install github.com/air-verse/air@latest; \
+	fi
+	$(AIR_BIN) -c .air.toml
+
+# 只运行前端（Vite 开发服务器）
+dev-frontend:
+	@echo "========================================="
+	@echo "  Grape Frontend (Vite)"
+	@echo "========================================="
+	@echo "Dev Server:  http://localhost:3000"
+	@echo "Proxy API:   http://localhost:4873"
+	@echo "========================================="
+	cd web && npm run dev
+
+# 同时运行前后端（两个独立进程）
 dev:
 	@echo "========================================="
 	@echo "  Grape Development Environment"
 	@echo "========================================="
-	@echo "Frontend (Vite):  http://localhost:3000"
-	@echo "Backend (Air):    http://localhost:4873"
-	@echo "API Port:         http://localhost:4874"
+	@echo "Frontend:    http://localhost:3000"
+	@echo "Backend:     http://localhost:4873"
+	@echo "API Port:    http://localhost:4874"
 	@echo "========================================="
 	@echo "Press Ctrl+C to stop all services"
 	@echo "========================================="
-	@# 确保 air 已安装
-	@if ! which air > /dev/null 2>&1; then \
+	@if [ ! -f "$(AIR_BIN)" ]; then \
 		echo "Installing air..."; \
 		go install github.com/air-verse/air@latest; \
 	fi
 	@trap 'kill 0' INT; \
 	cd web && npm run dev & \
-	$$(go env GOPATH)/bin/air -c .air.toml & \
+	$(AIR_BIN) -c .air.toml & \
 	wait
