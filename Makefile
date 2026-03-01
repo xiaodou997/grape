@@ -1,4 +1,4 @@
-.PHONY: build run test clean deps lint fmt build-frontend
+.PHONY: build run test clean deps lint fmt build-frontend dev
 
 APP_NAME := grape
 VERSION := 0.1.0
@@ -46,9 +46,24 @@ lint:
 fmt:
 	go fmt ./...
 
+# 开发模式 - 前后端热重载
+# 需要安装 air: go install github.com/air-verse/air@latest
 dev:
-	@echo "Starting development environment..."
-	@echo "Backend: http://localhost:4873"
-	@echo "Frontend: http://localhost:3000"
-	cd web && npm run dev &
-	go run ./cmd/grape
+	@echo "========================================="
+	@echo "  Grape Development Environment"
+	@echo "========================================="
+	@echo "Frontend (Vite):  http://localhost:3000"
+	@echo "Backend (Air):    http://localhost:4873"
+	@echo "API Port:         http://localhost:4874"
+	@echo "========================================="
+	@echo "Press Ctrl+C to stop all services"
+	@echo "========================================="
+	@# 确保 air 已安装
+	@if ! which air > /dev/null 2>&1; then \
+		echo "Installing air..."; \
+		go install github.com/air-verse/air@latest; \
+	fi
+	@trap 'kill 0' INT; \
+	cd web && npm run dev & \
+	$$(go env GOPATH)/bin/air -c .air.toml & \
+	wait
