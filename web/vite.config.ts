@@ -10,19 +10,6 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
-  server: {
-    port: 3000,
-    proxy: {
-      '/-/api': {
-        target: 'http://localhost:4873',
-        changeOrigin: true,
-      },
-      '^/(?!@vite|@fs|node_modules|src)': {
-        target: 'http://localhost:4873',
-        changeOrigin: true,
-      },
-    },
-  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,

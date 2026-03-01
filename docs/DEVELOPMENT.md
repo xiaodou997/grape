@@ -105,42 +105,37 @@ cd ..
 
 ### 5. 运行开发环境
 
-Grape 采用前后端分离架构，开发时需要分别运行：
-
-#### 方式一：同时运行前后端（推荐）
-
 ```bash
 make dev
 ```
 
-这会启动两个服务：
-- **前端**: http://localhost:3000 (Vite 开发服务器)
-- **后端**: http://localhost:4873 (Air 热重载 Go 代码)
-- **API**: http://localhost:4874 (npm registry API)
+这会执行：
+1. 构建前端（`npm run build`）
+2. 复制到 `internal/web/dist` 目录
+3. 启动 Air 监控 Go 代码变化
 
-**注意**: 前端会代理 API 请求到后端，所以直接访问 3000 端口即可。
+**访问地址：** http://localhost:4873
 
-#### 方式二：只运行后端（开发 API）
+### 6. 开发工作流
 
+#### 修改 Go 后端代码
+
+Air 会自动检测变化并重启服务：
 ```bash
-make dev-backend
+# 修改 internal/server/handler/*.go
+# Air 自动重新编译并重启
 ```
 
-适合只修改后端代码时使用。访问 http://localhost:4873 查看效果。
+#### 修改 Vue/TS 前端代码
 
-#### 方式三：只运行前端（开发 UI）
-
+需要手动重新构建：
 ```bash
-# 终端 1 - 先启动后端提供 API
-make dev-backend
-
-# 终端 2 - 启动前端
-make dev-frontend
+# 修改 web/src/**/*.vue
+# 按 Ctrl+C 停止，然后重新运行
+make dev
 ```
 
-适合只修改前端代码时使用。访问 http://localhost:3000 查看效果。
-
-### 6. 验证安装
+### 7. 验证安装
 
 ```bash
 # 检查后端健康状态
@@ -149,28 +144,27 @@ curl http://localhost:4873/-/health
 # 检查 API 状态
 curl http://localhost:4874/-/health
 
-# 在浏览器中访问前端
-open http://localhost:3000
+# 在浏览器中访问
+open http://localhost:4873
 ```
 
-### 7. 常见问题
+### 8. 常见问题
+
+**Q: `make dev` 每次都重新构建前端，太慢了？**
+
+A: 如果只修改后端代码，可以直接运行：
+```bash
+make run
+```
+这不会重新构建前端，但要求之前已经运行过 `make dev` 或 `make build`。
 
 **Q: 修改前端代码后页面没有更新？**
 
-A: 请确保：
-1. 访问的是 http://localhost:3000（Vite 开发服务器），不是 4873
-2. 浏览器开发者工具的 Network 选项卡中关闭了缓存
-3. 如果仍有问题，尝试刷新页面
+A: 修改 Vue/TS 代码后必须重新运行 `make dev`，因为前端是静态嵌入的。
 
-**Q: 修改后端代码后 API 没有更新？**
+**Q: Air 没有自动重载？**
 
-A: `make dev` 使用 Air 进行热重载，修改 Go 代码后会自动重启。如果未生效：
-1. 检查终端是否有编译错误
-2. 手动停止并重新运行 `make dev-backend`
-
-**Q: 前端访问 API 报错 404？**
-
-A: 确保后端服务已启动（端口 4873）。Vite 配置会自动代理 `/api` 请求到后端。
+A: 检查 `.air.toml` 配置是否正确，或查看终端输出是否有编译错误。
 
 ---
 
