@@ -7,7 +7,7 @@ on:
       - 'beta-v*'
 
 jobs:
-  # 判断是否为正式版
+  # Determine if it's a stable release
   check-version:
     name: Check Version Type
     runs-on: ubuntu-latest
@@ -32,7 +32,7 @@ jobs:
             echo "🚀 Stable release: $TAG"
           fi
 
-  # 构建 Linux 二进制文件
+  # Build Linux binaries
   build:
     name: Build Linux Binaries
     runs-on: ubuntu-latest
@@ -107,49 +107,49 @@ jobs:
             COMMITS=$(git log --pretty=format:"- %s" "$PREV_TAG..HEAD")
           fi
 
-          # 构建标题
+          # Build title
           if [ "$IS_BETA" = "true" ]; then
             TITLE="## 🧪 Beta Release ${CURRENT_TAG}"
-            NOTE="\n> ⚠️ **这是测试版本，不建议用于生产环境**"
+            NOTE="⚠️ **This is a beta version, not recommended for production use**"
           else
             TITLE="## 📦 Release ${CURRENT_TAG}"
             NOTE=""
           fi
 
-          # 构建 changelog
+          # Build changelog
           cat << EOF >> $GITHUB_OUTPUT
           changelog<<CHANGELOG
           $TITLE
           $NOTE
 
-          **发布日期**: $(date -u '+%Y-%m-%d')
+          **Release Date**: $(date -u '+%Y-%m-%d')
 
-          ### 📝 更新内容
+          ### 📝 Changelog
 
           $COMMITS
 
           ---
 
-          ## 📥 下载
+          ## 📥 Downloads
 
-          | 平台 | 架构 | 文件 |
-          |------|------|------|
+          | Platform | Architecture | File |
+          |----------|--------------|------|
           | Linux | x86_64 | \`grape-linux-amd64.tar.gz\` |
           | Linux | ARM64 | \`grape-linux-arm64.tar.gz\` |
 
-          ### 快速开始
+          ### Quick Start
 
           \`\`\`bash
-          # 下载 (AMD64)
+          # Download (AMD64)
           curl -sL https://github.com/xiaodou997/grape/releases/download/${CURRENT_TAG}/grape-linux-amd64.tar.gz | tar xz
 
-          # 运行
+          # Run
           ./grape-linux-amd64
           \`\`\`
           CHANGELOG
           EOF
 
-          # 添加 Docker 部分（如果是正式版）
+          # Add Docker section (for stable releases only)
           if [ "$IS_BETA" = "false" ]; then
             cat << EOF >> $GITHUB_OUTPUT
           changelog<<CHANGELOG
