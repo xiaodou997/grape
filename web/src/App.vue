@@ -33,7 +33,8 @@
                 </span>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item @click="handleLogout">{{ t('nav.logout') }}</el-dropdown-item>
+                    <el-dropdown-item @click="showChangePassword = true">{{ t('nav.changePassword') }}</el-dropdown-item>
+                    <el-dropdown-item divided @click="handleLogout">{{ t('nav.logout') }}</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -44,6 +45,25 @@
           </div>
         </div>
       </el-header>
+
+      <!-- Change Password Dialog -->
+      <el-dialog v-model="showChangePassword" :title="t('user.changePassword')" width="420px">
+        <el-form ref="pwdFormRef" :model="pwdForm" :rules="pwdRules" label-width="100px">
+          <el-form-item :label="t('user.oldPassword')" prop="oldPassword">
+            <el-input v-model="pwdForm.oldPassword" type="password" show-password />
+          </el-form-item>
+          <el-form-item :label="t('user.newPassword')" prop="newPassword">
+            <el-input v-model="pwdForm.newPassword" type="password" show-password />
+          </el-form-item>
+          <el-form-item :label="t('user.confirmPassword')" prop="confirmPassword">
+            <el-input v-model="pwdForm.confirmPassword" type="password" show-password />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="showChangePassword = false">{{ t('common.cancel') }}</el-button>
+          <el-button type="primary" @click="handleChangePassword" :loading="pwdLoading">{{ t('common.save') }}</el-button>
+        </template>
+      </el-dialog>
 
       <!-- Main Content -->
       <el-main class="main-content">
@@ -64,8 +84,12 @@
 </template>
 
 <script setup lang="ts">
+import { ref, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ElMessage } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { adminApi } from '@/api'
 import LanguageSwitch from '@/components/LanguageSwitch.vue'
 
 const { t } = useI18n()
@@ -74,6 +98,56 @@ const userStore = useUserStore()
 const handleLogout = () => {
   userStore.logout()
   window.location.href = '/'
+}
+
+// Change password
+const showChangePassword = ref(false)
+const pwdLoading = ref(false)
+const pwdFormRef = ref<FormInstance>()
+const pwdForm = reactive({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+const pwdRules: FormRules = {
+  oldPassword: [{ required: true, message: t('user.oldPasswordRequired'), trigger: 'blur' }],
+  newPassword: [
+    { required: true, message: t('user.newPasswordRequired'), trigger: 'blur' },
+    { min: 6, message: t('user.passwordMinLength'), trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: t('user.confirmPasswordRequired'), trigger: 'blur' },
+    {
+      validator: (rule: any, value: string, callback: Function) => {
+        if (value !== pwdForm.newPassword) {
+          callback(new Error(t('user.passwordMismatch')))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ]
+}
+
+const handleChangePassword = async () => {
+  const valid = await pwdFormRef.value?.validate()
+  if (!valid) return
+
+  pwdLoading.value = true
+  try {
+    await adminApi.updateUser(userStore.username!, {
+      password: pwdForm.newPassword
+    })
+    ElMessage.success(t('user.passwordChanged'))
+    showChangePassword.value = false
+    pwdFormRef.value?.resetFields()
+  } catch (error: any) {
+    ElMessage.error(error.response?.data?.error || t('user.passwordChangeFailed'))
+  } finally {
+    pwdLoading.value = false
+  }
 }
 </script>
 

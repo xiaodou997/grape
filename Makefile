@@ -1,8 +1,23 @@
-.PHONY: build run test clean deps lint fmt build-frontend dev
+.PHONY: build run test clean deps lint fmt build-frontend dev check-frontend
 
 APP_NAME := grape
 VERSION := 0.1.0
 BUILD_DIR := ./bin
+
+# 检查前端资源完整性
+check-frontend:
+	@echo "Checking frontend assets..."
+	@if [ ! -f "internal/web/dist/index.html" ]; then \
+		echo "❌ Error: Frontend assets not found!"; \
+		echo "   Please run 'make build-frontend' first or use 'make build'"; \
+		exit 1; \
+	fi
+	@if [ ! -d "internal/web/dist/assets" ]; then \
+		echo "❌ Error: Frontend assets directory missing!"; \
+		echo "   Please run 'make build-frontend' first"; \
+		exit 1; \
+	fi
+	@echo "✅ Frontend assets OK"
 
 build-frontend:
 	@echo "Building frontend..."
@@ -11,12 +26,12 @@ build-frontend:
 	rm -rf internal/web/dist
 	cp -r web/dist internal/web/
 
-build: build-frontend
+build: build-frontend check-frontend
 	@echo "Building $(APP_NAME)..."
 	@mkdir -p $(BUILD_DIR)
 	go build -ldflags "-s -w -X main.version=$(VERSION)" -o $(BUILD_DIR)/$(APP_NAME) ./cmd/grape
 
-build-only:
+build-only: check-frontend
 	@echo "Building $(APP_NAME) (without frontend)..."
 	@mkdir -p $(BUILD_DIR)
 	go build -ldflags "-s -w -X main.version=$(VERSION)" -o $(BUILD_DIR)/$(APP_NAME) ./cmd/grape
