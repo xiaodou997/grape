@@ -1,89 +1,89 @@
 <template>
   <div class="guide-page fade-in">
     <el-card class="guide-header">
-      <h1>📖 使用指南</h1>
-      <p>如何配置 npm、pnpm、yarn、bun 使用 Grape 私有源</p>
+      <h1>📖 {{ $t('guide.title') }}</h1>
+      <p>{{ $t('guide.subtitle') }}</p>
     </el-card>
 
     <!-- Tab 切换不同包管理器 -->
     <el-tabs v-model="activeTab" class="guide-tabs">
       <!-- npm -->
       <el-tab-pane label="npm" name="npm">
-        <GuideSection title="配置源">
+        <GuideSection :title="$t('guide.configTitle')">
           <CodeBlock :code="npmCommands.config" />
-          <p class="tip">推荐使用 scope 配置，只将特定范围的包指向私有源</p>
+          <p class="tip">{{ $t('guide.npm.scopeConfig') }}</p>
           <CodeBlock :code="npmCommands.scopeConfig" />
         </GuideSection>
 
-        <GuideSection title="用户认证">
+        <GuideSection :title="$t('guide.authTitle')">
           <CodeBlock :code="npmCommands.login" />
-          <p class="tip">默认用户名/密码: admin / admin</p>
+          <p class="tip">{{ $t('guide.npm.defaultCreds') }}</p>
         </GuideSection>
 
-        <GuideSection title="安装包">
+        <GuideSection :title="$t('guide.installTitle')">
           <CodeBlock :code="npmCommands.install" />
         </GuideSection>
 
-        <GuideSection title="发布包">
+        <GuideSection :title="$t('guide.publishTitle')">
           <CodeBlock :code="npmCommands.publish" />
-          <p class="tip">在 package.json 中配置 publishConfig 可以省略 --registry 参数</p>
+          <p class="tip">{{ $t('guide.npm.publishConfigHint') }}</p>
         </GuideSection>
 
-        <GuideSection title="删除包">
+        <GuideSection :title="$t('guide.unpublishTitle')">
           <CodeBlock :code="npmCommands.unpublish" />
         </GuideSection>
       </el-tab-pane>
 
       <!-- pnpm -->
       <el-tab-pane label="pnpm" name="pnpm">
-        <GuideSection title="配置源">
+        <GuideSection :title="$t('guide.configTitle')">
           <CodeBlock :code="pnpmCommands.config" />
-          <p class="tip">推荐使用 scope 配置</p>
+          <p class="tip">{{ $t('guide.pnpm.scopeConfig') }}</p>
           <CodeBlock :code="pnpmCommands.scopeConfig" />
         </GuideSection>
 
-        <GuideSection title="用户认证">
+        <GuideSection :title="$t('guide.authTitle')">
           <CodeBlock :code="pnpmCommands.login" />
         </GuideSection>
 
-        <GuideSection title="安装包">
+        <GuideSection :title="$t('guide.installTitle')">
           <CodeBlock :code="pnpmCommands.install" />
         </GuideSection>
 
-        <GuideSection title="发布包">
+        <GuideSection :title="$t('guide.publishTitle')">
           <CodeBlock :code="pnpmCommands.publish" />
         </GuideSection>
 
-        <GuideSection title="删除包">
+        <GuideSection :title="$t('guide.unpublishTitle')">
           <CodeBlock :code="pnpmCommands.unpublish" />
         </GuideSection>
       </el-tab-pane>
 
       <!-- yarn -->
       <el-tab-pane label="yarn" name="yarn">
-        <GuideSection title="配置源 (Yarn v1)">
+        <GuideSection :title="$t('guide.yarn.configV1Title')">
           <CodeBlock :code="yarnCommands.config" />
-          <p class="tip">推荐使用 scope 配置</p>
+          <p class="tip">{{ $t('guide.yarn.scopeConfig') }}</p>
           <CodeBlock :code="yarnCommands.scopeConfig" />
         </GuideSection>
 
-        <GuideSection title="配置源 (Yarn v2+/berry)">
+        <GuideSection :title="$t('guide.yarn.configV2Title')">
           <CodeBlock :code="yarnCommands.configV2" />
         </GuideSection>
 
-        <GuideSection title="用户认证">
+        <GuideSection :title="$t('guide.authTitle')">
           <CodeBlock :code="yarnCommands.login" />
         </GuideSection>
 
-        <GuideSection title="安装包">
+        <GuideSection :title="$t('guide.installTitle')">
           <CodeBlock :code="yarnCommands.install" />
         </GuideSection>
 
-        <GuideSection title="发布包">
+        <GuideSection :title="$t('guide.publishTitle')">
           <CodeBlock :code="yarnCommands.publish" />
         </GuideSection>
 
-        <GuideSection title="删除包">
+        <GuideSection :title="$t('guide.unpublishTitle')">
           <CodeBlock :code="yarnCommands.unpublish" />
         </GuideSection>
       </el-tab-pane>
@@ -92,26 +92,26 @@
       <el-tab-pane label="bun" name="bun">
         <el-alert type="warning" :closable="false" style="margin-bottom: 16px;">
           <template #title>
-            <strong>注意</strong>：bun 不支持 <code>bun config set</code> 命令，需要通过 bunfig.toml 配置文件或环境变量配置
+            <strong>{{ $t('guide.bun.warning') }}</strong>：{{ $t('guide.bun.warningDesc') }}
           </template>
         </el-alert>
 
-        <GuideSection title="配置源">
+        <GuideSection :title="$t('guide.configTitle')">
           <CodeBlock :code="bunCommands.config" />
-          <p class="tip">bun 使用 bunfig.toml 配置文件（TOML 格式），不支持 .npmrc 文件</p>
+          <p class="tip">bun {{ $t('guide.bun.configProject') }}</p>
           <CodeBlock :code="bunCommands.scopeConfig" />
         </GuideSection>
 
-        <GuideSection title="用户认证">
+        <GuideSection :title="$t('guide.authTitle')">
           <CodeBlock :code="bunCommands.login" />
-          <p class="tip">默认用户名/密码: admin / admin</p>
+          <p class="tip">{{ $t('guide.npm.defaultCreds') }}</p>
         </GuideSection>
 
-        <GuideSection title="安装包">
+        <GuideSection :title="$t('guide.installTitle')">
           <CodeBlock :code="bunCommands.install" />
         </GuideSection>
 
-        <GuideSection title="发布包">
+        <GuideSection :title="$t('guide.publishTitle')">
           <CodeBlock :code="bunCommands.publish" />
         </GuideSection>
       </el-tab-pane>
@@ -121,10 +121,10 @@
     <el-card class="project-config">
       <template #header>
         <div class="card-header">
-          <span>📁 项目级配置 (.npmrc)</span>
+          <span>📁 {{ $t('guide.projectConfig') }}</span>
         </div>
       </template>
-      <p class="section-desc">在项目根目录创建 .npmrc 文件，配置跟随项目，团队成员无需手动配置：</p>
+      <p class="section-desc">{{ $t('guide.projectConfigDesc') }}</p>
       <CodeBlock :code="npmrcExample" language="ini" />
     </el-card>
 
@@ -132,10 +132,10 @@
     <el-card class="package-json-config">
       <template #header>
         <div class="card-header">
-          <span>📦 package.json 发布配置</span>
+          <span>📦 {{ $t('guide.packageJson') }}</span>
         </div>
       </template>
-      <p class="section-desc">在 package.json 中配置 publishConfig，发布时无需指定 --registry：</p>
+      <p class="section-desc">{{ $t('guide.packageJsonDesc') }}</p>
       <CodeBlock :code="packageJsonExample" language="json" />
     </el-card>
 
@@ -143,11 +143,11 @@
     <el-card class="command-table">
       <template #header>
         <div class="card-header">
-          <span>📋 命令速查表</span>
+          <span>📋 {{ $t('guide.commandTable') }}</span>
         </div>
       </template>
       <el-table :data="commandTable" stripe>
-        <el-table-column prop="operation" label="操作" width="120" />
+        <el-table-column prop="operation" :label="$t('guide.operation')" width="120" />
         <el-table-column prop="npm" label="npm" />
         <el-table-column prop="pnpm" label="pnpm" />
         <el-table-column prop="yarn" label="yarn" />
@@ -158,192 +158,193 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import GuideSection from '@/components/GuideSection.vue'
 import CodeBlock from '@/components/CodeBlock.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t, locale } = useI18n()
 
 const activeTab = ref('npm')
 
 // npm 命令
-const npmCommands = {
-  config: `# 设置全局默认源
+const npmCommands = computed(() => ({
+  config: `# ${t('guide.npm.configDesc')}
 npm set registry http://localhost:4873
 
-# 恢复官方源
+# ${t('guide.npm.configRestore')}
 npm set registry https://registry.npmjs.org`,
-  scopeConfig: `# 仅设置特定 scope 的源（推荐）
+  scopeConfig: `# ${t('guide.npm.scopeConfig')}
 npm set @mycompany:registry http://localhost:4873
 
-# 查看当前配置
+# ${t('guide.npm.configList')}
 npm config list`,
-  login: `# 登录
+  login: `# ${t('guide.npm.login')}
 npm login --registry http://localhost:4873
 
-# 登出
+# ${t('guide.npm.logout')}
 npm logout --registry http://localhost:4873`,
-  install: `# 安装包
+  install: `# ${t('guide.npm.install')}
 npm install lodash
 
-# 安装指定版本
+# ${t('guide.npm.installVersion')}
 npm install lodash@4.17.21
 
-# 安装为开发依赖
+# ${t('guide.npm.installDev')}
 npm install -D typescript`,
-  publish: `# 发布包
+  publish: `# ${t('guide.npm.publish')}
 npm publish --registry http://localhost:4873
 
-# 发布 beta 版本
+# ${t('guide.npm.publishBeta')}
 npm publish --tag beta`,
-  unpublish: `# 删除特定版本
+  unpublish: `# ${t('guide.npm.unpublishVersion')}
 npm unpublish @mycompany/my-package@1.0.0 --registry http://localhost:4873
 
-# 删除整个包（谨慎操作）
+# ${t('guide.npm.unpublishAll')}
 npm unpublish @mycompany/my-package --force --registry http://localhost:4873`,
-}
+}))
 
 // pnpm 命令
-const pnpmCommands = {
-  config: `# 设置全局默认源
+const pnpmCommands = computed(() => ({
+  config: `# ${t('guide.pnpm.configDesc')}
 pnpm config set registry http://localhost:4873
 
-# 恢复官方源
+# ${t('guide.pnpm.configRestore')}
 pnpm config set registry https://registry.npmjs.org`,
-  scopeConfig: `# 仅设置特定 scope 的源（推荐）
+  scopeConfig: `# ${t('guide.pnpm.scopeConfig')}
 pnpm config set @mycompany:registry http://localhost:4873
 
-# 查看当前配置
+# ${t('guide.pnpm.configList')}
 pnpm config list`,
-  login: `# 登录
+  login: `# ${t('guide.npm.login')}
 pnpm login --registry http://localhost:4873
 
-# 登出
+# ${t('guide.npm.logout')}
 pnpm logout --registry http://localhost:4873`,
-  install: `# 安装包
+  install: `# ${t('guide.npm.install')}
 pnpm add lodash
 
-# 安装指定版本
+# ${t('guide.npm.installVersion')}
 pnpm add lodash@4.17.21
 
-# 安装为开发依赖
+# ${t('guide.npm.installDev')}
 pnpm add -D typescript`,
-  publish: `# 发布包
+  publish: `# ${t('guide.npm.publish')}
 pnpm publish --registry http://localhost:4873`,
-  unpublish: `# 删除特定版本
+  unpublish: `# ${t('guide.npm.unpublishVersion')}
 pnpm unpublish @mycompany/my-package@1.0.0 --registry http://localhost:4873`,
-}
+}))
 
 // yarn 命令
-const yarnCommands = {
-  config: `# 设置全局默认源 (Yarn v1)
+const yarnCommands = computed(() => ({
+  config: `# ${t('guide.yarn.configV1Title')}
 yarn config set registry http://localhost:4873
 
-# 恢复官方源
+# ${t('guide.pnpm.configRestore')}
 yarn config set registry https://registry.npmjs.org`,
-  scopeConfig: `# 仅设置特定 scope 的源（推荐）
+  scopeConfig: `# ${t('guide.yarn.scopeConfig')}
 yarn config set @mycompany:registry http://localhost:4873
 
-# 查看当前配置
+# ${t('guide.pnpm.configList')}
 yarn config list`,
-  configV2: `# Yarn v2+/berry 配置
+  configV2: `# ${t('guide.yarn.configV2')}
 yarn config set npmRegistryServer http://localhost:4873
 
-# 设置特定 scope 的源
+# ${t('guide.yarn.scopeConfigV2')}
 yarn config set npmScopes.mycompany.npmRegistryServer http://localhost:4873`,
-  login: `# 登录
+  login: `# ${t('guide.npm.login')}
 yarn login --registry http://localhost:4873
 
-# 登出
+# ${t('guide.npm.logout')}
 yarn logout`,
-  install: `# 安装包
+  install: `# ${t('guide.npm.install')}
 yarn add lodash
 
-# 安装指定版本
+# ${t('guide.npm.installVersion')}
 yarn add lodash@4.17.21
 
-# 安装为开发依赖
+# ${t('guide.npm.installDev')}
 yarn add -D typescript`,
-  publish: `# 发布包
+  publish: `# ${t('guide.npm.publish')}
 yarn publish --registry http://localhost:4873
 
-# 发布并指定新版本
+# ${t('guide.npm.publishBeta')}
 yarn publish --new-version 1.0.1`,
-  unpublish: `# 删除包
+  unpublish: `# ${t('guide.npm.unpublishVersion')}
 yarn unpublish @mycompany/my-package@1.0.0 --registry http://localhost:4873`,
-}
+}))
 
-// bun 命令（bun 不支持 config set，使用 bunfig.toml 或环境变量）
-const bunCommands = {
-  config: `# 方式一：使用 bunfig.toml 配置文件（推荐）
-# 在项目根目录创建 bunfig.toml
+// bun 命令
+const bunCommands = computed(() => ({
+  config: `# ${t('guide.bun.configMethod1')}
+# ${t('guide.bun.configProject')}
 cat > bunfig.toml << 'EOF'
 [install]
 registry = "http://localhost:4873"
 EOF
 
-# 全局配置：~/.bunfig.toml 或 $XDG_CONFIG_HOME/.bunfig.toml
+# ${t('guide.bun.configGlobal')}
 
-# 方式二：使用环境变量
+# ${t('guide.bun.configMethod2')}
 export BUN_CONFIG_REGISTRY=http://localhost:4873
 
-# 方式三：安装时指定源
+# ${t('guide.bun.configMethod3')}
 bun add lodash --registry http://localhost:4873`,
-  scopeConfig: `# 在 bunfig.toml 中设置特定 scope 的源
-# bun 目前不支持 scope 级别的 registry 配置
-# 建议使用环境变量或安装时指定
-
-# 查看当前配置
+  scopeConfig: `# ${t('guide.bun.noScopeConfig')}
+# ${t('guide.bun.viewConfig')}
 cat ~/.bunfig.toml`,
-  login: `# bun 使用 npm 登录（凭证需要手动添加到 bunfig.toml）
+  login: `# bun ${t('guide.npm.login')}
 npm login --registry http://localhost:4873
 
-# 登出
+# ${t('guide.npm.logout')}
 npm logout --registry http://localhost:4873`,
-  install: `# 安装包
+  install: `# ${t('guide.npm.install')}
 bun add lodash
 
-# 安装指定版本
+# ${t('guide.npm.installVersion')}
 bun add lodash@4.17.21
 
-# 安装为开发依赖
+# ${t('guide.npm.installDev')}
 bun add -d typescript`,
-  publish: `# 发布包
+  publish: `# ${t('guide.npm.publish')}
 bun publish`,
-}
+}))
 
 // .npmrc 示例
-const npmrcExample = `# .npmrc 文件示例
+const npmrcExample = computed(() => `# .npmrc
 
-# 默认源
+# ${t('guide.npm.configDesc')}
 registry=http://localhost:4873
 
-# 特定 scope 使用私有源
+# ${t('guide.npm.scopeConfig')}
 @mycompany:registry=http://localhost:4873
 @internal:registry=http://localhost:4873
 
-# 另一个 scope 使用其他源
-@partner:registry=https://npm.partner.com`
+# ${t('guide.yarn.scopeConfig')}
+@partner:registry=https://npm.partner.com`)
 
 // package.json 示例
-const packageJsonExample = `{
+const packageJsonExample = computed(() => `{
   "name": "@mycompany/my-package",
   "version": "1.0.0",
   "private": false,
   "publishConfig": {
     "registry": "http://localhost:4873"
   }
-}`
+}`)
 
 // 命令速查表
-const commandTable = [
-  { operation: '设置源', npm: 'npm set registry <url>', pnpm: 'pnpm config set registry <url>', yarn: 'yarn config set registry <url>', bun: '编辑 bunfig.toml 或环境变量' },
-  { operation: '登录', npm: 'npm login', pnpm: 'pnpm login', yarn: 'yarn login', bun: '使用 npm login' },
-  { operation: '登出', npm: 'npm logout', pnpm: 'pnpm logout', yarn: 'yarn logout', bun: '使用 npm logout' },
-  { operation: '安装包', npm: 'npm install <pkg>', pnpm: 'pnpm add <pkg>', yarn: 'yarn add <pkg>', bun: 'bun add <pkg>' },
-  { operation: '安装依赖', npm: 'npm install', pnpm: 'pnpm install', yarn: 'yarn', bun: 'bun install' },
-  { operation: '发布包', npm: 'npm publish', pnpm: 'pnpm publish', yarn: 'yarn publish', bun: 'bun publish' },
-  { operation: '删除包', npm: 'npm unpublish <pkg>', pnpm: 'pnpm unpublish <pkg>', yarn: 'yarn unpublish <pkg>', bun: '-' },
-  { operation: '查看配置', npm: 'npm config list', pnpm: 'pnpm config list', yarn: 'yarn config list', bun: 'cat ~/.bunfig.toml' },
-]
+const commandTable = computed(() => [
+  { operation: t('guide.setRegistry'), npm: 'npm set registry <url>', pnpm: 'pnpm config set registry <url>', yarn: 'yarn config set registry <url>', bun: t('guide.bun.configMethod1') },
+  { operation: t('guide.restoreRegistry'), npm: 'npm set registry https://registry.npmjs.org', pnpm: 'pnpm config set registry https://registry.npmjs.org', yarn: 'yarn config set registry https://registry.npmjs.org', bun: 'Edit ~/.bunfig.toml' },
+  { operation: t('guide.npm.login'), npm: 'npm login', pnpm: 'pnpm login', yarn: 'yarn login', bun: 'npm login' },
+  { operation: t('guide.npm.logout'), npm: 'npm logout', pnpm: 'pnpm logout', yarn: 'yarn logout', bun: 'npm logout' },
+  { operation: t('guide.npm.install'), npm: 'npm install <pkg>', pnpm: 'pnpm add <pkg>', yarn: 'yarn add <pkg>', bun: 'bun add <pkg>' },
+  { operation: t('guide.npm.installDev'), npm: 'npm install -D <pkg>', pnpm: 'pnpm add -D <pkg>', yarn: 'yarn add -D <pkg>', bun: 'bun add -d <pkg>' },
+  { operation: t('guide.npm.publish'), npm: 'npm publish', pnpm: 'pnpm publish', yarn: 'yarn publish', bun: 'bun publish' },
+  { operation: t('guide.npm.unpublishVersion'), npm: 'npm unpublish <pkg>@<version>', pnpm: 'pnpm unpublish <pkg>@<version>', yarn: 'yarn unpublish <pkg>@<version>', bun: '-' },
+  { operation: t('guide.pnpm.configList'), npm: 'npm config list', pnpm: 'pnpm config list', yarn: 'yarn config list', bun: 'cat ~/.bunfig.toml' },
+])
 </script>
 
 <style scoped>
