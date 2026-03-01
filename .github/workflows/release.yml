@@ -3,8 +3,8 @@ name: Release
 on:
   push:
     tags:
-      - "v*"
-      - "beta-v*"
+      - 'v*'
+      - 'beta-v*'
 
 jobs:
   # 判断是否为正式版
@@ -54,7 +54,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: '20'
           cache: npm
           cache-dependency-path: web/package-lock.json
 
@@ -100,64 +100,69 @@ jobs:
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           CURRENT_TAG=${{ needs.check-version.outputs.display_version }}
           IS_BETA=${{ needs.check-version.outputs.is_beta }}
-          
+
           if [ -z "$PREV_TAG" ]; then
             COMMITS=$(git log --pretty=format:"- %s" -n 20)
           else
             COMMITS=$(git log --pretty=format:"- %s" "$PREV_TAG..HEAD")
           fi
-          
+
           # 构建标题
           if [ "$IS_BETA" = "true" ]; then
             TITLE="## 🧪 Beta Release ${CURRENT_TAG}"
-            NOTE="
-> ⚠️ **这是测试版本，不建议用于生产环境**"
+            NOTE="\n> ⚠️ **这是测试版本，不建议用于生产环境**"
           else
             TITLE="## 📦 Release ${CURRENT_TAG}"
             NOTE=""
           fi
-          
+
           # 构建 changelog
-          {
-            echo "changelog<<EOF"
-            echo "$TITLE"
-            echo "$NOTE"
-            echo ""
-            echo "**发布日期**: $(date -u '+%Y-%m-%d')"
-            echo ""
-            echo "### 📝 更新内容"
-            echo ""
-            echo "$COMMITS"
-            echo ""
-            echo "---"
-            echo ""
-            echo "## 📥 下载"
-            echo ""
-            echo "| 平台 | 架构 | 文件 |"
-            echo "|------|------|------|"
-            echo "| Linux | x86_64 | \`grape-linux-amd64.tar.gz\` |"
-            echo "| Linux | ARM64 | \`grape-linux-arm64.tar.gz\` |"
-            echo ""
-            echo "### 快速开始"
-            echo ""
-            echo "\`\`\`bash"
-            echo "# 下载 (AMD64)"
-            echo "curl -sL https://github.com/xiaodou997/grape/releases/download/${CURRENT_TAG}/grape-linux-amd64.tar.gz | tar xz"
-            echo ""
-            echo "# 运行"
-            echo "./grape-linux-amd64"
-            echo "\`\`\`"
-            if [ "$IS_BETA" = "false" ]; then
-              echo ""
-              echo "### Docker"
-              echo ""
-              echo "\`\`\`bash"
-              echo "docker pull ghcr.io/xiaodou997/grape:${{ needs.check-version.outputs.version }}"
-              echo "docker run -d -p 4873:4873 -p 4874:4874 ghcr.io/xiaodou997/grape:${{ needs.check-version.outputs.version }}"
-              echo "\`\`\`"
-            fi
-            echo "EOF"
-          } >> $GITHUB_OUTPUT
+          cat << EOF >> $GITHUB_OUTPUT
+          changelog<<CHANGELOG
+          $TITLE
+          $NOTE
+
+          **发布日期**: $(date -u '+%Y-%m-%d')
+
+          ### 📝 更新内容
+
+          $COMMITS
+
+          ---
+
+          ## 📥 下载
+
+          | 平台 | 架构 | 文件 |
+          |------|------|------|
+          | Linux | x86_64 | \`grape-linux-amd64.tar.gz\` |
+          | Linux | ARM64 | \`grape-linux-arm64.tar.gz\` |
+
+          ### 快速开始
+
+          \`\`\`bash
+          # 下载 (AMD64)
+          curl -sL https://github.com/xiaodou997/grape/releases/download/${CURRENT_TAG}/grape-linux-amd64.tar.gz | tar xz
+
+          # 运行
+          ./grape-linux-amd64
+          \`\`\`
+          CHANGELOG
+          EOF
+
+          # 添加 Docker 部分（如果是正式版）
+          if [ "$IS_BETA" = "false" ]; then
+            cat << EOF >> $GITHUB_OUTPUT
+          changelog<<CHANGELOG
+
+          ### Docker
+
+          \`\`\`bash
+          docker pull ghcr.io/xiaodou997/grape:${{ needs.check-version.outputs.version }}
+          docker run -d -p 4873:4873 -p 4874:4874 ghcr.io/xiaodou997/grape:${{ needs.check-version.outputs.version }}
+          \`\`\`
+          CHANGELOG
+          EOF
+          fi
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
