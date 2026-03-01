@@ -3,7 +3,7 @@ name: Docker
 on:
   push:
     tags:
-      - "v*"
+      - "v*"  # 只在正式版 tag 构建，beta 版不构建
   workflow_dispatch:
     inputs:
       version:

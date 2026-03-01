@@ -4,16 +4,41 @@ on:
   push:
     tags:
       - "v*"
+      - "beta-v*"
 
 jobs:
+  # 判断是否为正式版
+  check-version:
+    name: Check Version Type
+    runs-on: ubuntu-latest
+    outputs:
+      is_beta: ${{ steps.check.outputs.is_beta }}
+      version: ${{ steps.check.outputs.version }}
+      display_version: ${{ steps.check.outputs.display_version }}
+    steps:
+      - name: Check tag
+        id: check
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          if [[ "$TAG" == beta-v* ]]; then
+            echo "is_beta=true" >> $GITHUB_OUTPUT
+            echo "version=${TAG#beta-}" >> $GITHUB_OUTPUT
+            echo "display_version=${TAG}" >> $GITHUB_OUTPUT
+            echo "📦 Beta release: $TAG"
+          else
+            echo "is_beta=false" >> $GITHUB_OUTPUT
+            echo "version=$TAG" >> $GITHUB_OUTPUT
+            echo "display_version=$TAG" >> $GITHUB_OUTPUT
+            echo "🚀 Stable release: $TAG"
+          fi
+
   # 构建 Linux 二进制文件
   build:
     name: Build Linux Binaries
     runs-on: ubuntu-latest
+    needs: check-version
     permissions:
       contents: write
-    outputs:
-      version: ${{ steps.version.outputs.version }}
 
     steps:
       - uses: actions/checkout@v4
@@ -46,17 +71,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gcc-aarch64-linux-gnu
 
-      - name: Get version
-        id: version
-        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-
       - name: Build Linux AMD64
         env:
           GOOS: linux
           GOARCH: amd64
           CGO_ENABLED: 1
         run: |
-          go build -ldflags="-s -w -X main.version=${{ steps.version.outputs.version }}" \
+          go build -ldflags="-s -w -X main.version=${{ needs.check-version.outputs.version }}" \
             -o grape-linux-amd64 ./cmd/grape
           tar -czvf grape-linux-amd64.tar.gz grape-linux-amd64
           echo "Built: grape-linux-amd64.tar.gz ($(du -h grape-linux-amd64.tar.gz | cut -f1))"
@@ -68,44 +89,17 @@ jobs:
           CGO_ENABLED: 1
           CC: aarch64-linux-gnu-gcc
         run: |
-          go build -ldflags="-s -w -X main.version=${{ steps.version.outputs.version }}" \
+          go build -ldflags="-s -w -X main.version=${{ needs.check-version.outputs.version }}" \
             -o grape-linux-arm64 ./cmd/grape
           tar -czvf grape-linux-arm64.tar.gz grape-linux-arm64
           echo "Built: grape-linux-arm64.tar.gz ($(du -h grape-linux-arm64.tar.gz | cut -f1))"
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: grape-binaries
-          path: |
-            grape-linux-amd64.tar.gz
-            grape-linux-arm64.tar.gz
-          retention-days: 1
-
-  # 发布 Release
-  release:
-    name: Create Release
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      discussions: write
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: grape-binaries
 
       - name: Generate Changelog
         id: changelog
         run: |
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          CURRENT_TAG=${{ needs.build.outputs.version }}
+          CURRENT_TAG=${{ needs.check-version.outputs.display_version }}
+          IS_BETA=${{ needs.check-version.outputs.is_beta }}
           
           if [ -z "$PREV_TAG" ]; then
             COMMITS=$(git log --pretty=format:"- %s" -n 20)
@@ -113,10 +107,21 @@ jobs:
             COMMITS=$(git log --pretty=format:"- %s" "$PREV_TAG..HEAD")
           fi
           
+          # 构建标题
+          if [ "$IS_BETA" = "true" ]; then
+            TITLE="## 🧪 Beta Release ${CURRENT_TAG}"
+            NOTE="
+> ⚠️ **这是测试版本，不建议用于生产环境**"
+          else
+            TITLE="## 📦 Release ${CURRENT_TAG}"
+            NOTE=""
+          fi
+          
           # 构建 changelog
           {
             echo "changelog<<EOF"
-            echo "## 📦 Release ${CURRENT_TAG}"
+            echo "$TITLE"
+            echo "$NOTE"
             echo ""
             echo "**发布日期**: $(date -u '+%Y-%m-%d')"
             echo ""
@@ -142,23 +147,25 @@ jobs:
             echo "# 运行"
             echo "./grape-linux-amd64"
             echo "\`\`\`"
-            echo ""
-            echo "### Docker"
-            echo ""
-            echo "\`\`\`bash"
-            echo "docker pull ghcr.io/xiaodou997/grape:${CURRENT_TAG}"
-            echo "docker run -d -p 4873:4873 -p 4874:4874 ghcr.io/xiaodou997/grape:${CURRENT_TAG}"
-            echo "\`\`\`"
+            if [ "$IS_BETA" = "false" ]; then
+              echo ""
+              echo "### Docker"
+              echo ""
+              echo "\`\`\`bash"
+              echo "docker pull ghcr.io/xiaodou997/grape:${{ needs.check-version.outputs.version }}"
+              echo "docker run -d -p 4873:4873 -p 4874:4874 ghcr.io/xiaodou997/grape:${{ needs.check-version.outputs.version }}"
+              echo "\`\`\`"
+            fi
             echo "EOF"
           } >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Release ${{ needs.build.outputs.version }}
+          name: ${{ needs.check-version.outputs.is_beta == 'true' && format('Beta {0}', needs.check-version.outputs.display_version) || format('Release {0}', needs.check-version.outputs.display_version) }}
           body: ${{ steps.changelog.outputs.changelog }}
           files: |
             grape-linux-amd64.tar.gz
             grape-linux-arm64.tar.gz
-          make_latest: true
-          discussion_category_name: Announcements
+          prerelease: ${{ needs.check-version.outputs.is_beta == 'true' }}
+          make_latest: ${{ needs.check-version.outputs.is_beta == 'false' }}
