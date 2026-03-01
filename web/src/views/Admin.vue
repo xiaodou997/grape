@@ -76,7 +76,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { adminApi } from '@/api'
 import UsersManager from './admin/Users.vue'
@@ -85,7 +86,16 @@ import BackupManager from './admin/Backup.vue'
 import GCManager from './admin/GC.vue'
 import SystemSettings from './admin/Settings.vue'
 
-const activeTab = ref('overview')
+const route = useRoute()
+const router = useRouter()
+
+// 从 URL 查询参数读取 tab，默认为 overview
+const activeTab = ref((route.query.tab as string) || 'overview')
+
+// 监听 tab 变化，更新 URL
+watch(activeTab, (newTab) => {
+  router.replace({ query: { ...route.query, tab: newTab } })
+})
 const loading = ref(false)
 
 const stats = reactive({

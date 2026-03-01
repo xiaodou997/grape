@@ -241,10 +241,10 @@ const formatTime = (time: string) => {
 
 // 快捷入口
 const quickActions = [
-  { title: 'home.quickActions.users', icon: 'User', path: '/admin/users', color: '#409EFF' },
-  { title: 'home.quickActions.tokens', icon: 'Key', path: '/admin/tokens', color: '#67C23A' },
-  { title: 'home.quickActions.backup', icon: 'Download', path: '/admin/backup', color: '#E6A23C' },
-  { title: 'home.quickActions.settings', icon: 'Setting', path: '/admin/settings', color: '#909399' },
+  { title: 'home.quickActions.users', icon: 'User', path: '/admin?tab=users', color: '#409EFF' },
+  { title: 'home.quickActions.tokens', icon: 'Key', path: '/admin?tab=tokens', color: '#67C23A' },
+  { title: 'home.quickActions.backup', icon: 'Download', path: '/admin?tab=backup', color: '#E6A23C' },
+  { title: 'home.quickActions.settings', icon: 'Setting', path: '/admin?tab=settings', color: '#909399' },
 ]
 
 onMounted(() => {
