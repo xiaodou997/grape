@@ -29,6 +29,14 @@ jobs:
       - name: Run vet
         run: go vet ./...
 
+      - name: Check formatting
+        run: |
+          if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then
+            echo "The following files need formatting:"
+            gofmt -l .
+            exit 1
+          fi
+
   test-frontend:
     name: Frontend Build
     runs-on: ubuntu-latest
