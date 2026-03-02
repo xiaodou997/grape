@@ -369,7 +369,7 @@ export default {
       configList: 'View current configuration',
       login: 'Login',
       logout: 'Logout',
-      defaultCreds: 'Default username/password: admin / admin',
+      defaultCreds: 'Default username/password: admin / admin123',
       install: 'Install package',
       installVersion: 'Install specific version',
       installDev: 'Install as dev dependency',

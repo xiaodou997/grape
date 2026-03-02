@@ -110,30 +110,12 @@ make dev
 ```
 
 这会执行：
-1. 构建前端（`npm run build`）
-2. 复制到 `internal/web/dist` 目录
-3. 启动 Air 监控 Go 代码变化
+1. `make dev` - Builds frontend, embeds it into Go source, and starts backend with Air.
+2. Edit Go code → Air auto-reloads.
+3. Edit Vue/TS code → Re-run `make dev` to rebuild and sync frontend.
+4. Access at `http://localhost:4873` (or `http://0.0.0.0:4873` for remote access).
 
-**访问地址：** http://localhost:4873
-
-### 6. 开发工作流
-
-#### 修改 Go 后端代码
-
-Air 会自动检测变化并重启服务：
-```bash
-# 修改 internal/server/handler/*.go
-# Air 自动重新编译并重启
-```
-
-#### 修改 Vue/TS 前端代码
-
-需要手动重新构建：
-```bash
-# 修改 web/src/**/*.vue
-# 按 Ctrl+C 停止，然后重新运行
-make dev
-```
+**Pro Tip:** Our flexible CSP/CORS policy now allows access via any local IP or `0.0.0.0`, making it easier to test on different devices in your network.
 
 ### 7. 验证安装
 

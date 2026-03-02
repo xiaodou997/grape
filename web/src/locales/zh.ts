@@ -369,7 +369,7 @@ export default {
       configList: '查看当前配置',
       login: '登录',
       logout: '登出',
-      defaultCreds: '默认用户名/密码: admin / admin',
+      defaultCreds: '默认用户名/密码: admin / admin123',
       install: '安装包',
       installVersion: '安装指定版本',
       installDev: '安装为开发依赖',

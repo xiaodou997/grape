@@ -11,6 +11,7 @@ type Config struct {
 	Log      LogConfig      `mapstructure:"log"`
 	Auth     AuthConfig     `mapstructure:"auth"`
 	Database DatabaseConfig `mapstructure:"database"`
+	Security SecurityConfig `mapstructure:"security"`
 }
 
 type ServerConfig struct {
@@ -64,6 +65,11 @@ type DatabaseConfig struct {
 	DSN  string `mapstructure:"dsn"`  // 数据库连接字符串
 }
 
+type SecurityConfig struct {
+	AllowedOrigins []string `mapstructure:"allowed_origins"`
+	ContentPolicy  string   `mapstructure:"content_policy"`
+}
+
 func Default() *Config {
 	return &Config{
 		Server: ServerConfig{
@@ -99,6 +105,10 @@ func Default() *Config {
 		Database: DatabaseConfig{
 			Type: "sqlite",
 			DSN:  "./data/grape.db",
+		},
+		Security: SecurityConfig{
+			AllowedOrigins: []string{}, // 空表示允许 4873 端口的任何地址
+			ContentPolicy:  "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' http://*:4874 http://localhost:4874 http://127.0.0.1:4874",
 		},
 	}
 }

@@ -54,16 +54,12 @@ func New(cfg *config.Config, version string) *Server {
 	router.Use(gin.Recovery())
 	router.Use(requestLogger())
 	router.Use(maxBytesMiddleware(50 << 20))
-	router.Use(securityHeadersMiddleware())
-	router.Use(prometheusMiddleware())
 
-	// npm Registry API 路由器（独立，无中间件）
+	// npm Registry API 路由器
 	apiRouter := gin.New()
 	apiRouter.Use(gin.Recovery())
 	apiRouter.Use(requestLogger())
 	apiRouter.Use(maxBytesMiddleware(50 << 20))
-	apiRouter.Use(corsMiddleware())
-	apiRouter.Use(prometheusMiddleware())
 
 	// 初始化组件
 	proxy := registry.NewProxy(&cfg.Registry)
@@ -138,6 +134,13 @@ func New(cfg *config.Config, version string) *Server {
 		},
 	}
 
+	// 注册动态安全中间件
+	router.Use(s.securityHeadersMiddleware())
+	router.Use(prometheusMiddleware())
+
+	apiRouter.Use(s.corsMiddleware())
+	apiRouter.Use(prometheusMiddleware())
+
 	// apiHandler 需要引用 s（通过 applyFn），所以在 s 创建后再初始化
 	s.apiHandler = handler.NewAPIHandler(storage, cfg.Storage.Path, proxy, cfg, version, s.applyConfig)
 
@@ -160,29 +163,20 @@ func (s *Server) applyConfig(cfg *config.Config) {
 	logger.Infof("✅ Config hot-reloaded successfully")
 }
 
-// createDefaultAdminIfNeeded 强制重置/创建管理员用户
+// createDefaultAdminIfNeeded 如果数据库中没有用户，创建默认管理员
 func createDefaultAdminIfNeeded(userStore auth.UserStore) {
-	adminUser, err := userStore.Get("admin")
-	if err != nil {
-		// 用户不存在，创建
-		adminUser = &auth.User{
+	users := userStore.List()
+	if len(users) == 0 {
+		adminUser := &auth.User{
 			Username: "admin",
 			Email:    "admin@grape.local",
-			Password: "admin",
+			Password: "admin123",
 			Role:     "admin",
 		}
 		if err := userStore.Create(adminUser); err != nil {
 			logger.Warnf("Failed to create default admin: %v", err)
 		} else {
-			logger.Info("👤 Created default admin user: admin / admin")
-		}
-	} else {
-		// 用户存在，强制重置密码为 admin 以解决登录问题
-		adminUser.Password = "admin"
-		if err := userStore.Update(adminUser); err != nil {
-			logger.Warnf("Failed to reset admin password: %v", err)
-		} else {
-			logger.Info("👤 Forced reset admin password to 'admin'")
+			logger.Info("👤 Created default admin user: admin / admin123")
 		}
 	}
 }
@@ -290,76 +284,50 @@ func (s *Server) setupRoutes() {
 
 // handleRegistryRequest 统一处理 npm registry 请求
 func (s *Server) handleRegistryRequest(c *gin.Context) {
-	// 使用 Request.URL.Path 获取完整路径（NoRoute 不会设置参数）
-	reqPath := c.Request.URL.Path
-	
-	// 去除前导 /
-	reqPath = strings.TrimPrefix(reqPath, "/")
-	
-	// 空路径或根路径
-	if reqPath == "" || reqPath == "/" {
+	pathInfo := parseRegistryPath(c.Request.URL.Path)
+	if pathInfo == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid path"})
 		return
 	}
-	
-	logger.Debugf("handleRegistryRequest: path=%s, method=%s", reqPath, c.Request.Method)
-	
-	// 判断是否为 tarball 请求 (包含 /-/)
-	if strings.Contains(reqPath, "/-/") {
-		// tarball 下载或删除
-		idx := strings.Index(reqPath, "/-/")
-		packageName := reqPath[:idx]
-		filename := reqPath[idx+3:]
-		
-		// 直接设置 Params
-		c.Params = gin.Params{
-			{Key: "package", Value: packageName},
-			{Key: "filename", Value: filename},
-		}
-		
+
+	logger.Debugf("handleRegistryRequest: package=%s, type=%v, method=%s", pathInfo.PackageName, pathInfo.Type, c.Request.Method)
+
+	// 设置 Params 供 Handler 使用
+	c.Params = gin.Params{{Key: "package", Value: pathInfo.PackageName}}
+	if pathInfo.Type == RequestTarball {
+		c.Params = append(c.Params, gin.Param{Key: "filename", Value: pathInfo.Filename})
+	}
+
+	// 路由逻辑
+	if pathInfo.Type == RequestTarball {
 		switch c.Request.Method {
 		case http.MethodGet:
 			s.registryHandler.GetTarball(c)
 		case http.MethodDelete:
-			// 删除需要认证
-			authMiddleware := auth.AuthMiddleware(s.jwtService, s.userStore)
-			authMiddleware(c)
-			if c.IsAborted() {
-				return
-			}
-			s.publishHandler.Unpublish(c)
+			s.withAuth(c, s.publishHandler.Unpublish)
 		default:
 			c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "method not allowed"})
 		}
 	} else {
-		// 包元数据或发布
-		// 直接设置 Params
-		c.Params = gin.Params{
-			{Key: "package", Value: reqPath},
-		}
-		
 		switch c.Request.Method {
 		case http.MethodGet:
 			s.registryHandler.GetPackage(c)
 		case http.MethodPut:
-			// 发布需要认证
-			authMiddleware := auth.AuthMiddleware(s.jwtService, s.userStore)
-			authMiddleware(c)
-			if c.IsAborted() {
-				return
-			}
-			s.publishHandler.Publish(c)
+			s.withAuth(c, s.publishHandler.Publish)
 		case http.MethodDelete:
-			// 删除需要认证
-			authMiddleware := auth.AuthMiddleware(s.jwtService, s.userStore)
-			authMiddleware(c)
-			if c.IsAborted() {
-				return
-			}
-			s.publishHandler.Unpublish(c)
+			s.withAuth(c, s.publishHandler.Unpublish)
 		default:
 			c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "method not allowed"})
 		}
+	}
+}
+
+// withAuth 辅助函数，确保执行特定操作前先进行认证
+func (s *Server) withAuth(c *gin.Context, handler gin.HandlerFunc) {
+	authMiddleware := auth.AuthMiddleware(s.jwtService, s.userStore)
+	authMiddleware(c)
+	if !c.IsAborted() {
+		handler(c)
 	}
 }
 
@@ -564,31 +532,55 @@ func prometheusMiddleware() gin.HandlerFunc {
 }
 
 // securityHeadersMiddleware 添加 HTTP 安全响应头
-func securityHeadersMiddleware() gin.HandlerFunc {
+func (s *Server) securityHeadersMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("X-Content-Type-Options", "nosniff")
 		c.Header("X-Frame-Options", "DENY")
 		c.Header("X-XSS-Protection", "1; mode=block")
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
-		// 允许连接到 API 端口 (4874) 并允许加载 Google Fonts
-		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' http://*:4874 http://localhost:4874 http://127.0.0.1:4874")
+		
+		// 使用配置中的 CSP 策略
+		csp := s.cfg.Security.ContentPolicy
+		if csp == "" {
+			csp = "default-src 'self'"
+		}
+		c.Header("Content-Security-Policy", csp)
 		c.Next()
 	}
 }
 
 // corsMiddleware 处理跨域请求
-func corsMiddleware() gin.HandlerFunc {
+func (s *Server) corsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
-		// 允许来自 Web UI 端口 (4873) 的任何请求地址
-		if origin != "" && (strings.HasSuffix(origin, ":4873") || strings.Contains(origin, "localhost") || strings.Contains(origin, "127.0.0.1")) {
+		if origin == "" {
+			c.Next()
+			return
+		}
+
+		allowed := false
+		if len(s.cfg.Security.AllowedOrigins) == 0 {
+			// 默认宽松模式：允许任何 4873 端口的访问
+			if strings.HasSuffix(origin, ":4873") || strings.Contains(origin, "localhost") || strings.Contains(origin, "127.0.0.1") {
+				allowed = true
+			}
+		} else {
+			// 严格模式：仅允许列表中的 Origin
+			for _, o := range s.cfg.Security.AllowedOrigins {
+				if o == origin || o == "*" {
+					allowed = true
+					break
+				}
+			}
+		}
+
+		if allowed {
 			c.Header("Access-Control-Allow-Origin", origin)
 			c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept")
 			c.Header("Access-Control-Allow-Credentials", "true")
 		}
 
-		// 处理预检请求
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return

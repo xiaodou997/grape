@@ -154,10 +154,7 @@ func (h *WebhookHandler) TestWebhook(c *gin.Context) {
 	}
 
 	// 异步发送测试事件
-	h.dispatcher.Dispatch(webhook.EventType("webhook:test"), gin.H{
-		"message": "This is a test event from Grape registry",
-		"id":      hook.ID,
-	})
+	h.dispatcher.Test(hook)
 
 	c.JSON(http.StatusOK, gin.H{"ok": true, "message": "test event dispatched"})
 }

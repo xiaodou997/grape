@@ -22,8 +22,9 @@ Grape is a **lightweight, high-performance** private npm registry written in Go,
 | 🔐 **User Authentication** | JWT auth with SQLite persistence |
 | 💾 **Data Persistence** | SQLite storage, survives restarts |
 | 🗄️ **Smart Caching** | Auto-cache public packages |
-| 🌐 **Modern Web UI** | Vue 3 + Element Plus admin interface |
-| 🪶 **Lightweight** | Memory usage < 10MB |
+| 🌐 **Modern Web UI** | High-impact 'Vineyard' design (Glassmorphism, Inter font) |
+| 🌍 **Full i18n** | Multi-language support (English/Chinese) out of the box |
+| 🪶 **Lightweight** | Memory usage < 10MB, binary size ~20MB |
 | 🔔 **Webhook Notifications** | Package publish/delete events |
 | 📊 **Prometheus Metrics** | Built-in monitoring support |
 | 🎫 **CI/CD Tokens** | Dedicated tokens for automation |
@@ -146,12 +147,11 @@ database:
 
 ## 🌐 Web UI Features
 
-- 📦 **Package Browser** - View cached packages and details
-- 👤 **User Management** - Create/delete users, assign roles
-- 🎫 **Token Management** - Create CI/CD tokens with permissions
-- 💾 **Backup & Restore** - Export/import data
-- 🗑️ **Garbage Collection** - Clean up old packages
-- 📊 **System Monitoring** - Stats and status
+- 📊 **Intelligent Dashboard** - Integrated system metrics and recent activities
+- 👤 **User Management** - Modern workspace for team collaboration
+- 🎫 **Token Management** - Secure CI/CD tokens with easy copy-paste
+- 💾 **Backup & Restore** - Aligned visual cards for data protection
+- 🗑️ **Garbage Collection** - Clean up old packages with VS Code style previews
 
 **Default credentials:** `admin` / `admin`
 
