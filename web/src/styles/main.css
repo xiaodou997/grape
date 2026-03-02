@@ -1,9 +1,30 @@
+/* Grape Vineyard Design System */
 :root {
-  --grape-primary: #6f2da8;
-  --grape-secondary: #9b4dcb;
-  --grape-accent: #4caf50;
-  --grape-bg: #f8f5ff;
-  --grape-text: #2d2d2d;
+  /* Brand Colors */
+  --g-brand: #7c3aed;
+  --g-brand-hover: #8b5cf6;
+  --g-brand-light: #f5f3ff;
+  
+  /* Neutral Palette */
+  --g-bg: #f8fafc;
+  --g-surface: #ffffff;
+  --g-text-primary: #0f172a;
+  --g-text-secondary: #475569;
+  --g-text-muted: #94a3b8;
+  --g-border: #e2e8f0;
+  
+  /* Semantic Colors */
+  --g-success: #10b981;
+  --g-warning: #f59e0b;
+  --g-error: #ef4444;
+  
+  /* Shadows & Radius */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 }
 
 * {
@@ -13,72 +34,113 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background-color: var(--grape-bg);
-  color: var(--grape-text);
-  line-height: 1.6;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--g-bg);
+  color: var(--g-text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
-.app-container {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+/* Scrollbar refinement */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Element Plus Overrides */
+.el-button--primary {
+  --el-button-bg-color: var(--g-brand) !important;
+  --el-button-border-color: var(--g-brand) !important;
+  --el-button-hover-bg-color: var(--g-brand-hover) !important;
+  --el-button-active-bg-color: var(--g-brand) !important;
+  font-weight: 500 !important;
+  border-radius: var(--radius-md) !important;
+}
+
+.el-card {
+  border: 1px solid var(--g-border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.el-card:hover {
+  box-shadow: var(--shadow-md) !important;
+}
+
+.el-menu {
+  border-right: none !important;
+}
+
+/* Layout Utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .main-content {
-  flex: 1;
-  padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
+  padding: 2rem !important;
   width: 100%;
 }
 
-/* Grape theme overrides */
-.el-button--primary {
-  --el-button-bg-color: var(--grape-primary);
-  --el-button-border-color: var(--grape-primary);
-  --el-button-hover-bg-color: var(--grape-secondary);
-  --el-button-hover-border-color: var(--grape-secondary);
+.section-container {
+  padding: 2rem 0;
 }
 
-.el-link--primary {
-  --el-link-text-color: var(--grape-primary);
-  --el-link-hover-text-color: var(--grape-secondary);
-}
-
-/* Card styles */
-.package-card {
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.package-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(111, 45, 168, 0.15);
-}
-
-/* Code block */
+/* VS Code Inspired Code Block */
 .code-block {
-  background-color: #1e1e1e;
-  color: #d4d4d4;
-  padding: 16px;
-  border-radius: 8px;
-  font-family: 'Fira Code', 'Monaco', monospace;
-  font-size: 14px;
-  overflow-x: auto;
+  background-color: #1e1e1e !important;
+  color: #d4d4d4 !important;
+  padding: 1.25rem !important;
+  border-radius: var(--radius-lg) !important;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  position: relative !important;
+  overflow-x: auto !important;
+  border: 1px solid #333 !important;
+}
+
+.code-block code {
+  color: #9cdcfe !important; /* VS Code light blue for properties */
+}
+
+.code-block .comment {
+  color: #6a9955 !important;
+}
+
+.code-block .keyword {
+  color: #569cd6 !important;
 }
 
 /* Animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .fade-in {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

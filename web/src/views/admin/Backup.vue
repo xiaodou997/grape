@@ -1,171 +1,99 @@
 <template>
-  <div class="backup-page">
-    <el-row :gutter="20">
-      <!-- 备份信息 -->
-      <el-col :span="24">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>数据概览</span>
-              <el-button type="primary" @click="loadBackupInfo">
-                <el-icon><Refresh /></el-icon>
-                刷新
-              </el-button>
-            </div>
-          </template>
-          <el-row :gutter="20" v-loading="loading">
-            <el-col :span="6">
-              <el-statistic title="总包数" :value="backupInfo.totalPackages" />
-            </el-col>
-            <el-col :span="6">
-              <el-statistic title="存储占用" :value="formatSize(backupInfo.storageSize)" />
-            </el-col>
-            <el-col :span="6">
-              <el-statistic title="数据库大小" :value="formatSize(backupInfo.databaseSize)" />
-            </el-col>
-            <el-col :span="6">
-              <el-statistic title="数据目录" :value="backupInfo.dataDir || '-'" />
-            </el-col>
-          </el-row>
-        </el-card>
-      </el-col>
-    </el-row>
+  <div class="backup-page fade-in">
+    <!-- Top Stats -->
+    <div class="backup-stats-row">
+      <div class="mini-stat-card">
+        <span class="m-label">{{ t('gc.totalPackages') }}</span>
+        <span class="m-value">{{ backupInfo.totalPackages }}</span>
+      </div>
+      <div class="mini-stat-card">
+        <span class="m-label">{{ t('home.stats.storageSize') }}</span>
+        <span class="m-value">{{ formatSize(backupInfo.storageSize) }}</span>
+      </div>
+      <div class="mini-stat-card">
+        <span class="m-label">DB Size</span>
+        <span class="m-value">{{ formatSize(backupInfo.databaseSize) }}</span>
+      </div>
+    </div>
 
-    <el-row :gutter="20" style="margin-top: 20px">
-      <!-- 创建备份 -->
-      <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <span>创建备份</span>
-          </template>
-          <div class="backup-section">
-            <el-icon class="backup-icon" :size="48"><Download /></el-icon>
-            <p>将当前数据（数据库 + 包文件）打包下载</p>
-            <el-button type="primary" size="large" @click="createBackup" :loading="downloading">
-              <el-icon><Download /></el-icon>
-              下载备份文件
-            </el-button>
-          </div>
-          <el-alert
-            type="info"
-            :closable="false"
-            style="margin-top: 16px"
+    <!-- Core Actions: Create & Restore -->
+    <div class="action-grid-v2">
+      <div class="action-card-v2">
+        <div class="card-v2-header">
+          <div class="icon-circle p-blue"><el-icon><Download /></el-icon></div>
+          <h3>{{ t('backup.createBackup') }}</h3>
+        </div>
+        <p class="card-v2-desc">{{ t('backup.backupInfo') }}</p>
+        <div class="card-v2-body">
+          <el-button type="primary" size="large" @click="createBackup" :loading="downloading" class="w-full">
+            {{ t('backup.downloadBackup') }}
+          </el-button>
+        </div>
+        <el-alert :title="t('backup.backupInfo')" type="info" :closable="false" show-icon />
+      </div>
+
+      <div class="action-card-v2">
+        <div class="card-v2-header">
+          <div class="icon-circle p-orange"><el-icon><Upload /></el-icon></div>
+          <h3>{{ t('backup.restoreBackup') }}</h3>
+        </div>
+        <p class="card-v2-desc">{{ t('backup.restoreConfirm') }}</p>
+        <div class="card-v2-body">
+          <el-upload
+            ref="uploadRef"
+            :auto-upload="false"
+            :show-file-list="true"
+            :limit="1"
+            accept=".tar.gz,.tgz"
+            :on-change="handleFileChange"
+            class="upload-full-width"
           >
-            <template #title>
-              备份内容包括：SQLite 数据库、所有包元数据和 tarball 文件
+            <template #trigger>
+              <el-button type="default" size="large" class="w-full">{{ t('backup.selectFile') }}</el-button>
             </template>
-          </el-alert>
-        </el-card>
-      </el-col>
-
-      <!-- 恢复备份 -->
-      <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <span>恢复备份</span>
-          </template>
-          <div class="backup-section">
-            <el-icon class="backup-icon" :size="48"><Upload /></el-icon>
-            <p>从备份文件恢复数据</p>
-            <el-upload
-              ref="uploadRef"
-              :auto-upload="false"
-              :show-file-list="true"
-              :limit="1"
-              accept=".tar.gz,.tgz"
-              :on-change="handleFileChange"
-              :on-exceed="handleExceed"
-            >
-              <template #trigger>
-                <el-button type="success" size="large">
-                  <el-icon><Upload /></el-icon>
-                  选择备份文件
-                </el-button>
-              </template>
-            </el-upload>
-            <el-button
-              type="warning"
-              size="large"
-              style="margin-top: 12px"
-              :disabled="!selectedFile"
-              :loading="restoring"
-              @click="restoreBackup"
-            >
-              <el-icon><RefreshRight /></el-icon>
-              恢复数据
-            </el-button>
-          </div>
-          <el-alert
+          </el-upload>
+          <el-button
             type="warning"
-            :closable="false"
-            style="margin-top: 16px"
+            size="large"
+            class="w-full mt-12"
+            :disabled="!selectedFile"
+            :loading="restoring"
+            @click="restoreBackup"
           >
-            <template #title>
-              ⚠️ 恢复操作会覆盖当前数据，请谨慎操作！恢复后需要重启服务。
-            </template>
-          </el-alert>
-        </el-card>
-      </el-col>
-    </el-row>
+            {{ t('backup.restoreBackup') }}
+          </el-button>
+        </div>
+        <el-alert title="⚠️ Warning: This will overwrite data" type="warning" :closable="false" show-icon />
+      </div>
+    </div>
 
-    <!-- 自动备份列表 -->
-    <el-card shadow="hover" style="margin-top: 20px" v-if="backups.length > 0">
-      <template #header>
-        <span>自动备份记录</span>
-      </template>
-      <el-table :data="backups" style="width: 100%">
-        <el-table-column prop="name" label="备份名称" />
-        <el-table-column prop="createdAt" label="创建时间" />
-        <el-table-column label="操作" width="200">
+    <!-- History -->
+    <section class="backup-history-section" v-if="backups.length > 0">
+      <h3 class="section-title-v2">{{ t('backup.backupList') }}</h3>
+      <el-table :data="backups" class="modern-table">
+        <el-table-column prop="name" :label="t('common.name')" min-width="200" />
+        <el-table-column prop="createdAt" :label="t('common.createdAt')" width="180" />
+        <el-table-column :label="t('common.actions')" width="120" fixed="right">
           <template #default="scope">
-            <el-button type="primary" size="small" @click="downloadAutoBackup(scope.row.name)">
-              下载
+            <el-button text type="primary" size="small" @click="downloadAutoBackup(scope.row.name)">
+              {{ t('common.download') }}
             </el-button>
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
-
-    <!-- 使用说明 -->
-    <el-card shadow="hover" style="margin-top: 20px">
-      <template #header>
-        <span>使用说明</span>
-      </template>
-      <el-collapse>
-        <el-collapse-item title="定时备份建议" name="1">
-          <p>建议在服务器上配置定时任务（cron）自动备份：</p>
-          <pre class="code-block"><code v-pre># 每天凌晨 3 点自动备份
-0 3 * * * /path/to/grape backup -o /backup/grape-$(date +\%Y\%m\%d).tar.gz</code></pre>
-        </el-collapse-item>
-        <el-collapse-item title="命令行备份" name="2">
-          <p>也可以使用命令行工具进行备份：</p>
-          <pre class="code-block"><code v-pre># 创建备份
-grape backup -o backup.tar.gz
-
-# 查看备份内容
-grape list -i backup.tar.gz
-
-# 恢复备份
-grape restore -i backup.tar.gz --force</code></pre>
-        </el-collapse-item>
-        <el-collapse-item title="恢复后注意事项" name="3">
-          <ul>
-            <li>恢复完成后需要重启 Grape 服务</li>
-            <li>如果配置文件有变化，需要手动更新配置</li>
-            <li>恢复前会自动备份当前数据到 <code>.restore-backup-时间戳</code> 目录</li>
-          </ul>
-        </el-collapse-item>
-      </el-collapse>
-    </el-card>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { UploadInstance, UploadFile, UploadFiles } from 'element-plus'
-import { Download, Upload, Refresh, RefreshRight } from '@element-plus/icons-vue'
+import { Download, Upload } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
+
+const { t } = useI18n()
 
 interface BackupInfo {
   totalPackages: number
@@ -183,12 +111,7 @@ interface Backup {
 const loading = ref(false)
 const downloading = ref(false)
 const restoring = ref(false)
-const backupInfo = ref<BackupInfo>({
-  totalPackages: 0,
-  storageSize: 0,
-  databaseSize: 0,
-  dataDir: '',
-})
+const backupInfo = ref<BackupInfo>({ totalPackages: 0, storageSize: 0, databaseSize: 0, dataDir: '' })
 const backups = ref<Backup[]>([])
 const selectedFile = ref<File | null>(null)
 const uploadRef = ref<UploadInstance>()
@@ -198,7 +121,7 @@ const formatSize = (bytes: number): string => {
   const k = 1024
   const sizes = ['B', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
 }
 
 const loadBackupInfo = async () => {
@@ -207,18 +130,9 @@ const loadBackupInfo = async () => {
     const res = await adminApi.getBackupInfo()
     backupInfo.value = res.data
   } catch {
-    ElMessage.error('加载备份信息失败')
+    ElMessage.error(t('errors.loadFailed'))
   } finally {
     loading.value = false
-  }
-}
-
-const loadBackups = async () => {
-  try {
-    const res = await adminApi.listBackups()
-    backups.value = res.data.backups || []
-  } catch {
-    // 忽略错误
   }
 }
 
@@ -226,128 +140,75 @@ const createBackup = async () => {
   try {
     downloading.value = true
     const response = await adminApi.downloadBackup()
-    
-    // 创建下载链接
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', `grape-backup-${new Date().toISOString().slice(0, 19).replace(/[:-]/g, '')}.tar.gz`)
+    link.setAttribute('download', `grape-backup-${new Date().getTime()}.tar.gz`)
     document.body.appendChild(link)
     link.click()
     link.remove()
     window.URL.revokeObjectURL(url)
-    
-    ElMessage.success('备份下载成功')
+    ElMessage.success(t('common.success'))
   } catch {
-    ElMessage.error('备份失败')
+    ElMessage.error(t('errors.saveFailed'))
   } finally {
     downloading.value = false
   }
 }
 
-const handleFileChange = (file: UploadFile, _uploadFiles: UploadFiles) => {
-  selectedFile.value = file.raw || null
-}
-
-const handleExceed = () => {
-  ElMessage.warning('只能选择一个文件')
-}
+const handleFileChange = (file: UploadFile) => { selectedFile.value = file.raw || null }
 
 const restoreBackup = async () => {
-  if (!selectedFile.value) {
-    ElMessage.warning('请先选择备份文件')
-    return
-  }
-
+  if (!selectedFile.value) return
   try {
-    await ElMessageBox.confirm(
-      '恢复操作会覆盖当前数据，确定要继续吗？',
-      '警告',
-      {
-        confirmButtonText: '确定恢复',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
-
+    await ElMessageBox.confirm(t('backup.restoreConfirm'), t('common.warning'), {
+      confirmButtonText: t('common.confirm'),
+      cancelButtonText: t('common.cancel'),
+      type: 'warning',
+    })
     restoring.value = true
     const formData = new FormData()
     formData.append('file', selectedFile.value)
-
-    const res = await adminApi.restoreBackup(formData)
-    
-    ElMessage.success(res.data.message || '恢复成功')
-    
-    // 清除文件选择
-    selectedFile.value = null
-    uploadRef.value?.clearFiles()
-    
-    // 提示重启
-    if (res.data.restart) {
-      ElMessageBox.alert(
-        '数据已恢复，请重启 Grape 服务以应用更改。',
-        '需要重启',
-        {
-          confirmButtonText: '知道了',
-          type: 'info',
-        }
-      )
-    }
-  } catch (error: unknown) {
-    if (error !== 'cancel') {
-      const err = error as { response?: { data?: { error?: string } } }
-      ElMessage.error(err.response?.data?.error || '恢复失败')
-    }
+    await adminApi.restoreBackup(formData)
+    ElMessage.success(t('common.success'))
+  } catch (error: any) {
+    if (error !== 'cancel') ElMessage.error(error.response?.data?.error || 'Restore failed')
   } finally {
     restoring.value = false
   }
 }
 
-const downloadAutoBackup = async (name: string) => {
-  ElMessage.info('此功能暂未实现')
-}
+const downloadAutoBackup = (name: string) => { ElMessage.info('Developing...') }
 
 onMounted(() => {
   loadBackupInfo()
-  loadBackups()
 })
 </script>
 
 <style scoped>
-.backup-page {
-  max-width: 1200px;
-  margin: 0 auto;
-}
+.backup-page { display: flex; flex-direction: column; gap: 32px; }
+.backup-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.mini-stat-card { background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--g-border); display: flex; flex-direction: column; gap: 4px; }
+.m-label { font-size: 12px; color: var(--g-text-muted); font-weight: 600; text-transform: uppercase; }
+.m-value { font-size: 20px; font-weight: 700; color: var(--g-text-primary); }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+.action-grid-v2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: stretch; }
+.action-card-v2 { background: white; border-radius: 20px; border: 1px solid var(--g-border); padding: 32px; display: flex; flex-direction: column; height: 100%; }
+.card-v2-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+.card-v2-header h3 { font-size: 18px; font-weight: 700; margin: 0; }
+.icon-circle { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.p-blue { background: #eff6ff; color: #3b82f6; }
+.p-orange { background: #fff7ed; color: #f97316; }
+.card-v2-desc { font-size: 14px; color: var(--g-text-secondary); margin-bottom: 24px; flex: 1; }
+.card-v2-body { margin-bottom: 24px; }
 
-.backup-section {
-  text-align: center;
-  padding: 20px 0;
-}
+.w-full { width: 100%; }
+.mt-12 { margin-top: 12px; }
+.upload-full-width :deep(.el-upload) { width: 100%; }
 
-.backup-icon {
-  color: var(--el-color-primary);
-  margin-bottom: 12px;
-}
+.section-title-v2 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
 
-.code-block {
-  background: #f5f5f5;
-  padding: 12px;
-  border-radius: 4px;
-  overflow-x: auto;
-}
-
-.code-block code {
-  font-family: monospace;
-  font-size: 13px;
-}
-
-:deep(.el-upload) {
-  display: inline-block;
+@media (max-width: 768px) {
+  .action-grid-v2 { grid-template-columns: 1fr; }
 }
 </style>

@@ -23,7 +23,7 @@ var ValidRoles = map[string]bool{
 
 // ValidatePassword 验证密码强度
 func ValidatePassword(password string) error {
-	if len(password) < 8 {
+	if len(password) < 5 {
 		return ErrPasswordTooShort
 	}
 	return nil

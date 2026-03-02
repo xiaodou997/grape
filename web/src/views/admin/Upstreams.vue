@@ -189,11 +189,17 @@ onMounted(() => {
 }
 
 .code-block {
-  background: #f5f5f5;
-  padding: 16px;
-  border-radius: 4px;
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 20px;
+  border-radius: 12px;
   overflow-x: auto;
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
+  line-height: 1.6;
+}
+
+.code-block code {
+  color: #38bdf8;
 }
 </style>

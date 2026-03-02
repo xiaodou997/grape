@@ -1,96 +1,105 @@
 <template>
-  <div class="users-page">
-    <div class="page-header">
-      <h3>用户管理 <span class="user-count">共 {{ users.length }} 个用户</span></h3>
-      <el-button type="primary" @click="showCreateDialog = true">
+  <div class="users-page fade-in">
+    <div class="page-header-modern">
+      <div class="header-info">
+        <h3>{{ t('users.title') }}</h3>
+        <span class="count-badge">{{ users.length }} {{ t('common.all') }}</span>
+      </div>
+      <el-button type="primary" @click="showCreateDialog = true" class="btn-with-shadow">
         <el-icon><Plus /></el-icon>
-        添加用户
+        {{ t('users.createUser') }}
       </el-button>
     </div>
 
-    <el-table :data="users" stripe v-loading="loading">
-      <el-table-column prop="username" label="用户名" />
-      <el-table-column prop="email" label="邮箱" />
-      <el-table-column prop="role" label="角色" width="120">
-        <template #default="{ row }">
-          <el-tag :type="roleTagType(row.role)">
-            {{ roleLabel(row.role) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="lastLogin" label="最后登录" width="180">
-        <template #default="{ row }">
-          {{ row.lastLogin ? formatTime(row.lastLogin) : '-' }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="createdAt" label="创建时间" width="180">
-        <template #default="{ row }">
-          {{ formatTime(row.createdAt) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="150">
-        <template #default="{ row }">
-          <el-button text type="primary" @click="handleEdit(row)" :disabled="row.username === 'admin'">
-            编辑
-          </el-button>
-          <el-button text type="danger" @click="handleDelete(row)" :disabled="row.username === 'admin'">
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <el-empty v-if="!loading && users.length === 0" description="暂无用户" />
+    <div class="table-container">
+      <el-table :data="users" v-loading="loading" class="modern-table">
+        <el-table-column prop="username" :label="t('users.username')" min-width="120">
+          <template #default="{ row }">
+            <span class="username-cell">{{ row.username }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="email" :label="t('users.email')" min-width="180" />
+        <el-table-column prop="role" :label="t('users.role')" width="120">
+          <template #default="{ row }">
+            <el-tag :type="roleTagType(row.role)" size="small" effect="light" round>
+              {{ roleLabel(row.role) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="lastLogin" :label="t('tokens.lastUsed')" width="160">
+          <template #default="{ row }">
+            <span class="time-cell">{{ row.lastLogin ? formatTime(row.lastLogin) : '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('common.actions')" width="160" fixed="right">
+          <template #default="{ row }">
+            <div class="action-buttons">
+              <el-button text type="primary" size="small" @click="handleEdit(row)" :disabled="row.username === 'admin'">
+                {{ t('common.edit') }}
+              </el-button>
+              <el-button text type="danger" size="small" @click="handleDelete(row)" :disabled="row.username === 'admin'">
+                {{ t('common.delete') }}
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-empty v-if="!loading && users.length === 0" :description="t('common.empty')" />
+    </div>
 
     <!-- Create User Dialog -->
-    <el-dialog v-model="showCreateDialog" title="添加用户" width="420px">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="用户名" prop="name">
-          <el-input v-model="form.name" />
+    <el-dialog v-model="showCreateDialog" :title="t('users.createUser')" width="440px" class="modern-dialog">
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+        <el-form-item :label="t('users.username')" prop="name">
+          <el-input v-model="form.name" :placeholder="t('users.username')" />
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="form.email" />
+        <el-form-item :label="t('users.email')" prop="email">
+          <el-input v-model="form.email" placeholder="email@example.com" />
         </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input v-model="form.password" type="password" show-password />
+        <el-form-item :label="t('users.password')" prop="password">
+          <el-input v-model="form.password" type="password" show-password :placeholder="t('users.passwordMinLength')" />
         </el-form-item>
-        <el-form-item label="角色" prop="role">
+        <el-form-item :label="t('users.role')" prop="role">
           <el-select v-model="form.role" style="width: 100%">
-            <el-option label="管理员" value="admin" />
-            <el-option label="开发者" value="developer" />
-            <el-option label="只读" value="readonly" />
+            <el-option :label="t('users.roleAdmin')" value="admin" />
+            <el-option :label="t('users.roleUser')" value="developer" />
+            <el-option :label="t('common.default')" value="readonly" />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleCreate" :loading="creating">创建</el-button>
+        <div class="dialog-footer">
+          <el-button @click="showCreateDialog = false">{{ t('common.cancel') }}</el-button>
+          <el-button type="primary" @click="handleCreate" :loading="creating">{{ t('common.confirm') }}</el-button>
+        </div>
       </template>
     </el-dialog>
 
     <!-- Edit User Dialog -->
-    <el-dialog v-model="showEditDialog" title="编辑用户" width="420px">
-      <el-form ref="editFormRef" :model="editForm" label-width="80px">
-        <el-form-item label="用户名">
+    <el-dialog v-model="showEditDialog" :title="t('users.editUser')" width="440px" class="modern-dialog">
+      <el-form ref="editFormRef" :model="editForm" label-position="top">
+        <el-form-item :label="t('users.username')">
           <el-input :value="editForm.username" disabled />
         </el-form-item>
-        <el-form-item label="邮箱">
+        <el-form-item :label="t('users.email')">
           <el-input v-model="editForm.email" />
         </el-form-item>
-        <el-form-item label="新密码">
-          <el-input v-model="editForm.password" type="password" show-password placeholder="留空则不修改" />
+        <el-form-item :label="t('users.newPassword')">
+          <el-input v-model="editForm.password" type="password" show-password :placeholder="t('settings.jwtSecretPlaceholder')" />
         </el-form-item>
-        <el-form-item label="角色">
+        <el-form-item :label="t('users.role')">
           <el-select v-model="editForm.role" style="width: 100%">
-            <el-option label="管理员" value="admin" />
-            <el-option label="开发者" value="developer" />
-            <el-option label="只读" value="readonly" />
+            <el-option :label="t('users.roleAdmin')" value="admin" />
+            <el-option :label="t('users.roleUser')" value="developer" />
+            <el-option :label="t('common.default')" value="readonly" />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showEditDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleSaveEdit">保存</el-button>
+        <div class="dialog-footer">
+          <el-button @click="showEditDialog = false">{{ t('common.cancel') }}</el-button>
+          <el-button type="primary" @click="handleSaveEdit">{{ t('common.save') }}</el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -98,10 +107,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { adminApi } from '@/api'
+
+const { t } = useI18n()
 
 interface User {
   username: string
@@ -135,19 +147,19 @@ const editForm = reactive({
 
 const rules: FormRules = {
   name: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '用户名长度 3-20 个字符', trigger: 'blur' },
+    { required: true, message: t('login.usernameRequired'), trigger: 'blur' },
+    { min: 3, max: 20, message: '3-20 characters', trigger: 'blur' },
   ],
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' },
+    { required: true, message: 'Email required', trigger: 'blur' },
+    { type: 'email', message: 'Invalid email', trigger: 'blur' },
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码至少6位', trigger: 'blur' },
+    { required: true, message: t('login.passwordRequired'), trigger: 'blur' },
+    { min: 5, message: t('users.passwordMinLength'), trigger: 'blur' },
   ],
   role: [
-    { required: true, message: '请选择角色', trigger: 'change' },
+    { required: true, message: 'Role required', trigger: 'change' },
   ],
 }
 
@@ -158,19 +170,16 @@ const roleTagType = (role: string): 'danger' | 'primary' | 'info' => {
 }
 
 const roleLabel = (role: string): string => {
-  if (role === 'admin') return '管理员'
-  if (role === 'developer') return '开发者'
-  if (role === 'readonly') return '只读'
-  return role
+  if (role === 'admin') return t('users.roleAdmin')
+  if (role === 'developer') return t('users.roleUser')
+  return t('common.default')
 }
 
 const formatTime = (time?: string): string => {
   if (!time) return '-'
-  try {
-    return new Date(time).toLocaleString('zh-CN')
-  } catch {
-    return time
-  }
+  return new Date(time).toLocaleDateString(undefined, {
+    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+  })
 }
 
 const loadUsers = async () => {
@@ -179,7 +188,7 @@ const loadUsers = async () => {
     const res = await adminApi.getUsers()
     users.value = res.data.users || []
   } catch {
-    ElMessage.error('加载用户列表失败')
+    ElMessage.error(t('errors.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -197,13 +206,13 @@ const handleCreate = async () => {
       password: form.password,
       role: form.role,
     })
-    ElMessage.success('创建成功')
+    ElMessage.success(t('users.userCreated'))
     showCreateDialog.value = false
     formRef.value?.resetFields()
     form.role = 'developer'
     loadUsers()
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.error || '创建失败')
+    ElMessage.error(error.response?.data?.error || t('errors.saveFailed'))
   } finally {
     creating.value = false
   }
@@ -225,62 +234,78 @@ const handleSaveEdit = async () => {
 
   try {
     await adminApi.updateUser(editForm.username, payload)
-    ElMessage.success('保存成功')
+    ElMessage.success(t('users.userUpdated'))
     showEditDialog.value = false
     loadUsers()
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.error || '保存失败')
+    ElMessage.error(error.response?.data?.error || t('errors.saveFailed'))
   }
 }
 
 const handleDelete = async (row: User) => {
-  if (row.username === 'admin') {
-    ElMessage.warning('不能删除管理员账户')
-    return
-  }
-
   try {
-    await ElMessageBox.confirm(`确定删除用户 ${row.username}？`, '警告', {
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm(`${t('users.deleteUserConfirm')} ${row.username}?`, t('common.warning'), {
+      confirmButtonText: t('common.delete'),
+      cancelButtonText: t('common.cancel'),
       type: 'warning',
     })
 
     await adminApi.deleteUser(row.username)
-    ElMessage.success('删除成功')
+    ElMessage.success(t('users.userDeleted'))
     loadUsers()
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error(error.response?.data?.error || '删除失败')
+      ElMessage.error(error.response?.data?.error || t('errors.deleteFailed'))
     }
   }
 }
 
-onMounted(() => {
-  loadUsers()
-})
+onMounted(loadUsers)
 </script>
 
 <style scoped>
 .users-page {
-  padding: 20px 0;
+  padding: 0;
 }
 
-.page-header {
+.page-header-modern {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
-.page-header h3 {
-  margin: 0;
+.header-info h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
 }
 
-.user-count {
-  font-size: 14px;
-  color: #909399;
-  font-weight: normal;
-  margin-left: 8px;
+.count-badge {
+  font-size: 12px;
+  color: var(--g-text-muted);
+  background: var(--g-bg);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.username-cell {
+  font-weight: 600;
+  color: var(--g-text-primary);
+}
+
+.time-cell {
+  font-size: 13px;
+  color: var(--g-text-secondary);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-with-shadow {
+  box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.2);
 }
 </style>

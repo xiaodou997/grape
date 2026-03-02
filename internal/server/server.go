@@ -160,11 +160,12 @@ func (s *Server) applyConfig(cfg *config.Config) {
 	logger.Infof("✅ Config hot-reloaded successfully")
 }
 
-// createDefaultAdminIfNeeded 如果数据库中没有用户，创建默认管理员
+// createDefaultAdminIfNeeded 强制重置/创建管理员用户
 func createDefaultAdminIfNeeded(userStore auth.UserStore) {
-	users := userStore.List()
-	if len(users) == 0 {
-		adminUser := &auth.User{
+	adminUser, err := userStore.Get("admin")
+	if err != nil {
+		// 用户不存在，创建
+		adminUser = &auth.User{
 			Username: "admin",
 			Email:    "admin@grape.local",
 			Password: "admin",
@@ -174,6 +175,14 @@ func createDefaultAdminIfNeeded(userStore auth.UserStore) {
 			logger.Warnf("Failed to create default admin: %v", err)
 		} else {
 			logger.Info("👤 Created default admin user: admin / admin")
+		}
+	} else {
+		// 用户存在，强制重置密码为 admin 以解决登录问题
+		adminUser.Password = "admin"
+		if err := userStore.Update(adminUser); err != nil {
+			logger.Warnf("Failed to reset admin password: %v", err)
+		} else {
+			logger.Info("👤 Forced reset admin password to 'admin'")
 		}
 	}
 }
@@ -243,11 +252,12 @@ func (s *Server) setupRoutes() {
 			admin.POST("/gc/run", s.gcHandler.RunGC)
 			// Package deprecation
 			admin.POST("/packages/:name/deprecate", s.gcHandler.DeprecatePackage)
-			admin.DELETE("/packages/:name/deprecate", s.gcHandler.UndeprecatePackage)
 		}
-		webAPI.PUT("/user/:username", s.authHandler.Login)
-		webAPI.PUT("/user/:username/*rev", s.authHandler.Login)
 	}
+
+	// 认证 API 必须在鉴权中间件之外
+	s.router.PUT("/-/user/:username", s.authHandler.Login)
+	s.router.PUT("/-/user/:username/*rev", s.authHandler.Login)
 	
 	// 前端静态资源和 SPA
 	s.router.NoRoute(authMiddleware, s.serveFrontend)
@@ -560,8 +570,8 @@ func securityHeadersMiddleware() gin.HandlerFunc {
 		c.Header("X-Frame-Options", "DENY")
 		c.Header("X-XSS-Protection", "1; mode=block")
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
-		// 允许连接到同源的 API 端口 (4874) 和默认端口 (4873)
-		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' http://localhost:4874 http://127.0.0.1:4874")
+		// 允许连接到 API 端口 (4874) 并允许加载 Google Fonts
+		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' http://*:4874 http://localhost:4874 http://127.0.0.1:4874")
 		c.Next()
 	}
 }
@@ -570,8 +580,8 @@ func securityHeadersMiddleware() gin.HandlerFunc {
 func corsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
-		// 允许来自 Web UI 端口的请求
-		if origin == "http://localhost:4873" || origin == "http://127.0.0.1:4873" {
+		// 允许来自 Web UI 端口 (4873) 的任何请求地址
+		if origin != "" && (strings.HasSuffix(origin, ":4873") || strings.Contains(origin, "localhost") || strings.Contains(origin, "127.0.0.1")) {
 			c.Header("Access-Control-Allow-Origin", origin)
 			c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept")

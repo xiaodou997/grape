@@ -1,346 +1,221 @@
 <template>
-  <div class="dashboard-page">
-    <!-- 统计卡片 -->
-    <el-row :gutter="20" v-loading="loading">
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon blue">
-            <el-icon :size="32"><Box /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ stats.totalPackages }}</div>
-            <div class="stat-label">{{ $t('home.stats.localPackages') }}</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon green">
-            <el-icon :size="32"><Download /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ formatSize(stats.storageSize) }}</div>
-            <div class="stat-label">{{ $t('home.stats.storageSize') }}</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon orange">
-            <el-icon :size="32"><User /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ stats.users }}</div>
-            <div class="stat-label">{{ $t('nav.users') }}</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon purple">
-            <el-icon :size="32"><Check /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ $t('common.running') }}</div>
-            <div class="stat-label">{{ $t('common.status') }}</div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+  <div class="dashboard-wrapper fade-in">
+    <!-- Top Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-box blue">
+        <div class="stat-info">
+          <span class="stat-label">{{ t('home.stats.localPackages') }}</span>
+          <span class="stat-number">{{ stats.totalPackages }}</span>
+        </div>
+        <div class="stat-icon-bg"><el-icon><Box /></el-icon></div>
+      </div>
 
-    <!-- 快捷操作 -->
-    <el-card class="quick-actions" shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <span class="header-title">
-            <el-icon><Grid /></el-icon>
-            {{ $t('home.quickActions.title') }}
+      <div class="stat-box green">
+        <div class="stat-info">
+          <span class="stat-label">{{ t('home.stats.storageSize') }}</span>
+          <span class="stat-number">{{ formatSize(stats.storageSize) }}</span>
+        </div>
+        <div class="stat-icon-bg"><el-icon><Download /></el-icon></div>
+      </div>
+
+      <div class="stat-box orange">
+        <div class="stat-info">
+          <span class="stat-label">{{ t('nav.users') }}</span>
+          <span class="stat-number">{{ stats.users }}</span>
+        </div>
+        <div class="stat-icon-bg"><el-icon><User /></el-icon></div>
+      </div>
+
+      <div class="stat-box purple">
+        <div class="stat-info">
+          <span class="stat-label">{{ t('common.status') }}</span>
+          <span class="stat-number status-text">
+            <span class="status-dot"></span>
+            {{ t('common.running') }}
           </span>
         </div>
-      </template>
-      <el-row :gutter="16">
-        <el-col :span="4" v-for="action in quickActions" :key="action.name">
-          <div class="quick-action-item" @click="$router.push(action.path)">
-            <el-icon :size="24" :color="action.color">
-              <component :is="action.icon" />
-            </el-icon>
-            <span class="action-name">{{ action.name }}</span>
-          </div>
-        </el-col>
-      </el-row>
-    </el-card>
+        <div class="stat-icon-bg"><el-icon><Check /></el-icon></div>
+      </div>
+    </div>
 
-    <!-- 最近活动和系统信息 -->
-    <el-row :gutter="20">
-      <el-col :span="12">
-        <el-card shadow="hover" class="recent-activity">
-          <template #header>
-            <div class="card-header">
-              <span class="header-title">
-                <el-icon><Clock /></el-icon>
-                {{ $t('home.recentActivity') }}
-              </span>
-              <el-button text type="primary" @click="$router.push('/packages')">
-                {{ $t('home.viewAll') }}
-              </el-button>
-            </div>
-          </template>
-          <el-empty v-if="recentPackages.length === 0" :description="$t('packages.empty')" />
-          <el-timeline v-else>
-            <el-timeline-item
-              v-for="pkg in recentPackages"
-              :key="pkg.name"
-              :timestamp="formatTime(pkg.updatedAt)"
-              type="primary"
-            >
-              <div class="timeline-item" @click="$router.push(`/package/${pkg.name}`)">
-                <el-link type="primary">{{ pkg.name }}</el-link>
-                <el-tag size="small" type="info">v{{ pkg.version }}</el-tag>
+    <!-- Main Content Split -->
+    <div class="dashboard-main-grid">
+      <!-- Left: Recent Activity -->
+      <section class="dashboard-card activity-card">
+        <div class="card-header-v2">
+          <h3>{{ t('home.recentActivity') }}</h3>
+          <el-button text type="primary" @click="$router.push('/packages')">{{ t('home.viewAll') }}</el-button>
+        </div>
+        <div class="activity-list" v-loading="loading">
+          <el-empty v-if="recentPackages.length === 0" :image-size="80" :description="t('packages.empty')" />
+          <div v-else class="timeline-v2">
+            <div v-for="pkg in recentPackages" :key="pkg.name" class="timeline-v2-item" @click="$router.push(`/package/${pkg.name}`)">
+              <div class="t-dot"></div>
+              <div class="t-content">
+                <div class="t-header">
+                  <span class="t-pkg">{{ pkg.name }}</span>
+                  <span class="t-ver">v{{ pkg.version }}</span>
+                </div>
+                <div class="t-time">{{ formatTime(pkg.updatedAt) }}</div>
               </div>
-            </el-timeline-item>
-          </el-timeline>
-        </el-card>
-      </el-col>
-      <el-col :span="12">
-        <el-card shadow="hover" class="system-overview">
-          <template #header>
-            <div class="card-header">
-              <span class="header-title">
-                <el-icon><InfoFilled /></el-icon>
-                {{ $t('admin.systemInfo') }}
-              </span>
-              <el-button text type="primary" @click="$router.push('/admin/system')">
-                {{ $t('common.more') }}
-              </el-button>
             </div>
-          </template>
-          <el-descriptions :column="1" border>
-            <el-descriptions-item :label="$t('admin.version')">{{ sysInfo.version }}</el-descriptions-item>
-            <el-descriptions-item :label="$t('admin.uptime')">{{ sysInfo.uptime }}</el-descriptions-item>
-            <el-descriptions-item :label="$t('admin.host')">{{ sysInfo.host }}</el-descriptions-item>
-            <el-descriptions-item :label="$t('admin.storagePath')">{{ sysInfo.storagePath }}</el-descriptions-item>
-          </el-descriptions>
-        </el-card>
-      </el-col>
-    </el-row>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Quick Actions & System Info -->
+      <div class="dashboard-side-col">
+        <section class="dashboard-card quick-links">
+          <h3>{{ t('home.quickActions.title') }}</h3>
+          <div class="action-grid-small">
+            <div v-for="action in quickActions" :key="action.path" class="action-item-small" @click="$router.push(action.path)">
+              <div class="item-icon" :style="{ color: action.color, backgroundColor: action.color + '10' }">
+                <el-icon><component :is="action.icon" /></el-icon>
+              </div>
+              <span>{{ action.name }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="dashboard-card system-info-card">
+          <h3>{{ t('admin.systemInfo') }}</h3>
+          <div class="sys-detail-list">
+            <div class="sys-item">
+              <span class="s-label">{{ t('admin.version') }}</span>
+              <span class="s-value"><el-tag size="small" round effect="light">{{ sysInfo.version || 'v0.1.0' }}</el-tag></span>
+            </div>
+            <div class="sys-item">
+              <span class="s-label">{{ t('admin.uptime') }}</span>
+              <span class="s-value">{{ sysInfo.uptime || '-' }}</span>
+            </div>
+            <div class="sys-item">
+              <span class="s-label">{{ t('admin.storagePath') }}</span>
+              <span class="s-value truncate">{{ sysInfo.storagePath || '-' }}</span>
+            </div>
+            <div class="sys-item">
+              <span class="s-label">Database</span>
+              <span class="s-value truncate">{{ sysInfo.databasePath || '-' }}</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import {
-  Box,
-  Download,
-  User,
-  Check,
-  Grid,
-  Clock,
-  InfoFilled,
-  UserFilled,
-  Key,
-  Download as DownloadIcon,
-  Delete,
-  Setting,
-  Link,
-  Connection,
-  Document,
-} from '@element-plus/icons-vue'
+import { Box, Download, User, Check, UserFilled, Key, Delete, Setting, Connection } from '@element-plus/icons-vue'
 import { adminApi, packageApi } from '@/api'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
-
 const loading = ref(false)
-
-const stats = reactive({
-  totalPackages: 0,
-  storageSize: 0,
-  users: 0,
-})
-
-const sysInfo = reactive({
-  version: '',
-  uptime: '',
-  host: '',
-  storagePath: '',
-})
-
+const stats = reactive({ totalPackages: 0, storageSize: 0, users: 0 })
+const sysInfo = reactive({ version: '', uptime: '', host: '', storagePath: '', databasePath: '' })
 const recentPackages = ref<any[]>([])
 
 const quickActions = [
-  { name: t('nav.users'), icon: UserFilled, color: '#409eff', path: '/admin/users' },
-  { name: t('nav.tokens'), icon: Key, color: '#67c23a', path: '/admin/tokens' },
-  { name: t('nav.backup'), icon: DownloadIcon, color: '#e6a23c', path: '/admin/backup' },
-  { name: t('nav.gc'), icon: Delete, color: '#f56c6c', path: '/admin/gc' },
-  { name: t('nav.settings'), icon: Setting, color: '#909399', path: '/admin/settings' },
-  { name: t('nav.webhooks'), icon: Connection, color: '#8e44ad', path: '/admin/webhooks' },
+  { name: t('nav.users'), icon: UserFilled, color: '#7c3aed', path: '/admin/users' },
+  { name: t('nav.tokens'), icon: Key, color: '#10b981', path: '/admin/tokens' },
+  { name: t('nav.backup'), icon: Download, color: '#f59e0b', path: '/admin/backup' },
+  { name: t('nav.gc'), icon: Delete, color: '#ef4444', path: '/admin/gc' },
+  { name: t('nav.settings'), icon: Setting, color: '#64748b', path: '/admin/settings' },
+  { name: t('nav.webhooks'), icon: Connection, color: '#3b82f6', path: '/admin/webhooks' },
 ]
 
-const formatSize = (bytes: number): string => {
-  if (bytes === 0) return '0 MB'
+const formatSize = (bytes: number) => {
+  if (bytes === 0) return '0 B'
   const k = 1024
   const sizes = ['B', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i]
 }
 
-const formatTime = (time?: string): string => {
+const formatTime = (time?: string) => {
   if (!time) return '-'
-  try {
-    return new Date(time).toLocaleString('zh-CN')
-  } catch {
-    return time
-  }
+  return new Date(time).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-const loadStats = async () => {
+const loadData = async () => {
   loading.value = true
   try {
-    const [statsRes, usersRes, pkgRes] = await Promise.all([
+    const [statsRes, usersRes, pkgRes, sysRes] = await Promise.all([
       adminApi.getStats(),
       adminApi.getUsers(),
       packageApi.getPackages(),
+      adminApi.getSystemInfo()
     ])
-
     stats.totalPackages = statsRes.data.totalPackages || 0
     stats.storageSize = statsRes.data.storageSize || 0
     stats.users = (usersRes.data.users || []).length
-    const allPackages = pkgRes.data.objects || []
-    recentPackages.value = allPackages.slice(0, 5)
+    recentPackages.value = (pkgRes.data.packages || []).slice(0, 8)
+    Object.assign(sysInfo, sysRes.data)
   } catch {
-    ElMessage.error(t('home.stats.loadError'))
+    ElMessage.error(t('errors.loadFailed'))
   } finally {
     loading.value = false
   }
 }
 
-const loadSystemInfo = async () => {
-  try {
-    const res = await adminApi.getSystemInfo()
-    Object.assign(sysInfo, res.data)
-  } catch {
-    // ignore
-  }
-}
-
-onMounted(() => {
-  loadStats()
-  loadSystemInfo()
-})
+onMounted(loadData)
 </script>
 
 <style scoped>
-.dashboard-page {
-  padding: 0;
+.dashboard-wrapper { display: flex; flex-direction: column; gap: 32px; }
+.stats-grid { 
+  display: grid; 
+  grid-template-columns: repeat(4, minmax(0, 1fr)); 
+  gap: 16px; 
 }
 
-.stat-card {
-  display: flex;
-  align-items: center;
-  padding: 8px;
+@media (max-width: 1200px) {
+  .stat-number { font-size: 22px; }
+  .stat-label { font-size: 11px; }
+  .stat-box { padding: 16px; }
 }
 
-.stat-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 16px;
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
 }
+.stat-box { position: relative; padding: 24px; background: white; border-radius: 20px; border: 1px solid var(--g-border); display: flex; justify-content: space-between; align-items: center; overflow: hidden; transition: all 0.2s ease; }
+.stat-box:hover { transform: translateY(-2px); border-color: var(--g-brand); box-shadow: var(--shadow-md); }
+.stat-info { display: flex; flex-direction: column; z-index: 1; }
+.stat-label { font-size: 12px; font-weight: 600; color: var(--g-text-muted); text-transform: uppercase; margin-bottom: 8px; }
+.stat-number { font-size: 26px; font-weight: 800; color: var(--g-text-primary); }
+.stat-icon-bg { font-size: 44px; opacity: 0.08; position: absolute; right: -10px; bottom: -10px; transform: rotate(-15deg); }
 
-.stat-icon.blue {
-  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-  color: #1976d2;
-}
+.status-text { display: flex; align-items: center; gap: 8px; font-size: 18px; }
+.status-dot { width: 10px; height: 10px; background: var(--g-success); border-radius: 50%; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); animation: pulse 2s infinite; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
-.stat-icon.green {
-  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-  color: #388e3c;
-}
+.dashboard-main-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px; }
+.dashboard-card { background: white; border-radius: 24px; border: 1px solid var(--g-border); padding: 28px; }
+.dashboard-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 24px; }
 
-.stat-icon.orange {
-  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-  color: #f57c00;
-}
+.card-header-v2 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.timeline-v2 { display: flex; flex-direction: column; gap: 8px; }
+.timeline-v2-item { padding: 12px 16px; background: var(--g-bg); border-radius: 12px; display: flex; gap: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+.timeline-v2-item:hover { background: white; border-color: var(--g-brand); transform: translateX(4px); }
+.t-dot { width: 6px; height: 6px; background: var(--g-brand); border-radius: 50%; margin-top: 6px; }
+.t-header { display: flex; justify-content: space-between; margin-bottom: 2px; }
+.t-pkg { font-weight: 600; font-size: 14px; color: var(--g-text-primary); }
+.t-ver { font-size: 12px; color: var(--g-text-muted); }
+.t-time { font-size: 12px; color: var(--g-text-muted); }
 
-.stat-icon.purple {
-  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
-  color: #7b1fa2;
-}
+.dashboard-side-col { display: flex; flex-direction: column; gap: 24px; }
+.action-grid-small { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.action-item-small { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px; cursor: pointer; border-radius: 12px; transition: all 0.2s; }
+.action-item-small:hover { background: var(--g-bg); }
+.item-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.action-item-small span { font-size: 12px; font-weight: 600; color: var(--g-text-secondary); text-align: center; }
 
-.stat-content {
-  flex: 1;
-}
+.sys-detail-list { display: flex; flex-direction: column; gap: 12px; }
+.sys-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--g-bg); border-radius: 10px; }
+.s-label { font-size: 13px; color: var(--g-text-muted); }
+.s-value { font-size: 13px; font-weight: 600; color: var(--g-text-primary); }
+.truncate { max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.stat-value {
-  font-size: 24px;
-  font-weight: 600;
-  color: #303133;
-  line-height: 1.2;
-}
-
-.stat-label {
-  font-size: 13px;
-  color: #909399;
-  margin-top: 4px;
-}
-
-.quick-actions {
-  margin-top: 20px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-}
-
-.quick-action-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-  background: #f5f7fa;
-}
-
-.quick-action-item:hover {
-  background: #e4e7ed;
-  transform: translateY(-2px);
-}
-
-.action-name {
-  margin-top: 8px;
-  font-size: 13px;
-  color: #606266;
-}
-
-.recent-activity,
-.system-overview {
-  margin-top: 20px;
-}
-
-.timeline-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-:deep(.el-timeline-item__content) {
-  padding-left: 8px;
-}
+@media (max-width: 1024px) { .dashboard-main-grid { grid-template-columns: 1fr; } }
 </style>

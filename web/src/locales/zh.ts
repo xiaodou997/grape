@@ -33,7 +33,8 @@ export default {
     default: '默认',
     hours: '小时',
     empty: '空',
-    saveSuccess: '保存成功'
+    saveSuccess: '保存成功',
+    download: '下载'
   },
   nav: {
     home: '首页',
@@ -50,32 +51,38 @@ export default {
     login: '登录',
     changePassword: '修改密码',
     github: 'GitHub 仓库',
-    language: '语言'
+    language: '语言',
+    footerTagline: '优雅、极速、安全的私有 npm 仓库。'
   },
   login: {
-    title: 'Grape 登录',
+    title: '登录 Grape',
+    subtitle: '管理你的私有 npm 仓库',
     username: '用户名',
     password: '密码',
     usernameRequired: '请输入用户名',
     passwordRequired: '请输入密码',
-    submit: '登录',
+    submit: '立即登录',
     success: '登录成功',
     error: '用户名或密码错误',
-    errorRetry: '登录失败，请稍后重试'
+    errorRetry: '登录失败，请稍后重试',
+    welcomeBack: '欢迎回来',
+    rememberMe: '记住我',
+    forgotPassword: '忘记密码？'
   },
   home: {
-    heroTitle: 'Grape',
-    heroSubtitle: '轻盈如风的企业级私有 npm 仓库',
-    heroTagline: 'One binary, zero debt. 一个二进制，零负担。',
-    browsePackages: '浏览包',
-    quickStart: '快速开始',
+    heroTitle: 'Grape Registry',
+    heroSubtitle: '现代私有仓库',
+    heroTitleAccent: '专为团队打造',
+    heroTagline: '极简、极速、安全的私有 npm 仓库，助力团队高效管理私有包与依赖缓存。',
+    browsePackages: '浏览所有包',
+    quickStart: '快速上手',
     stats: {
       localPackages: '本地包数量',
       cachedPackages: '缓存包数量',
       storageSize: '存储占用',
       loadError: '加载统计数据失败'
     },
-    recentActivity: '最近活动',
+    recentActivity: '最近活动记录',
     viewAll: '查看全部',
     quickActions: {
       title: '快捷入口',
@@ -99,28 +106,22 @@ export default {
         desc: '多上游代理、自动缓存、备份恢复和垃圾回收。'
       }
     },
+    promo: {
+      needHelp: '需要帮助？',
+      guideDesc: '查看我们全面的安装指南，在几分钟内完成配置。',
+      viewGuide: '查看指南'
+    },
     guide: {
       step1: '1. 配置 npm 使用 Grape',
       step2: '2. 安装包',
       step3: '3. 发布私有包',
       step4: '4. 恢复默认源'
-    },
-    localPackages: '本地包数量',
-    cachedPackages: '缓存包数量',
-    storageUsed: '存储占用',
-    feature1Title: '极速部署',
-    feature1Desc:
-      '单一二进制文件，无需安装 Node.js，无需 npm install。下载即用，开箱即部署。',
-    feature2Title: '安全可控',
-    feature2Desc:
-      '私有包完全隔离，精细的权限控制，完整的审计日志，企业级安全保障。',
-    feature3Title: '智能代理',
-    feature3Desc: '自动缓存公共包，加速团队开发。支持多上游源，灵活配置。',
-    quickStartTitle: '快速开始',
-    step1: '1. 配置 npm 使用 Grape',
-    step2: '2. 安装包',
-    step3: '3. 发布私有包',
-    step4: '4. 恢复默认源'
+    }
+  },
+  table: {
+    package: '包名',
+    version: '版本',
+    updated: '更新时间'
   },
   packages: {
     title: '包列表',
@@ -128,7 +129,7 @@ export default {
     version: '版本',
     searchPlaceholder: '搜索包...',
     noPackages: '暂无包',
-    empty: '暂无包',
+    empty: '暂无包数据',
     private: '私有',
     cached: '缓存',
     noDescription: '暂无描述',
@@ -258,7 +259,10 @@ export default {
     gcComplete: '垃圾回收完成',
     deprecatePackage: '废弃包',
     deprecateReason: '废弃原因',
-    undeprecate: '取消废弃'
+    undeprecate: '取消废弃',
+    strategyTitle: '清理策略与自动化',
+    whatIsGC: '什么是垃圾回收 (GC)?',
+    gcDescription: '垃圾回收机制可以帮助你清理长期未使用的包版本，在保留核心发布版本的同时释放存储空间，保持仓库整洁。'
   },
   webhooks: {
     title: 'Webhook 管理',

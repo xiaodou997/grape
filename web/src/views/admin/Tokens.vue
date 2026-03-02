@@ -1,112 +1,97 @@
 <template>
-  <div class="tokens-page">
-    <div class="page-header">
-      <h2>CI/CD Tokens</h2>
-      <p class="description">管理用于自动化发布的持久化 Token。这些 Token 可用于 CI/CD 流水线，无需交互式登录。</p>
-    </div>
-
-    <div class="actions">
-      <el-button type="primary" @click="showCreateDialog">
+  <div class="tokens-page fade-in">
+    <div class="page-header-modern">
+      <div class="header-info">
+        <h3>{{ t('tokens.title') }}</h3>
+        <p class="subtitle">{{ t('webhooks.description') }}</p>
+      </div>
+      <el-button type="primary" @click="showCreateDialog" class="btn-with-shadow">
         <el-icon><Plus /></el-icon>
-        创建 Token
+        {{ t('tokens.createToken') }}
       </el-button>
     </div>
 
-    <!-- Token 列表 -->
-    <el-table :data="tokens" v-loading="loading" style="width: 100%">
-      <el-table-column prop="name" label="名称" min-width="150" />
-      <el-table-column label="类型" width="100">
-        <template #default="{ row }">
-          <el-tag :type="row.readonly ? 'info' : 'success'" size="small">
-            {{ row.readonly ? '只读' : '可发布' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="创建时间" width="180">
-        <template #default="{ row }">
-          {{ formatDate(row.createdAt) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="过期时间" width="180">
-        <template #default="{ row }">
-          <span v-if="row.expiresAt">{{ formatDate(row.expiresAt) }}</span>
-          <span v-else class="never-expires">永不过期</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="最后使用" width="180">
-        <template #default="{ row }">
-          <span v-if="row.lastUsed">{{ formatDate(row.lastUsed) }}</span>
-          <span v-else class="never-used">从未使用</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="100" fixed="right">
-        <template #default="{ row }">
-          <el-button type="danger" size="small" text @click="confirmDelete(row)">
-            <el-icon><Delete /></el-icon>
-            撤销
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div class="table-container">
+      <el-table :data="tokens" v-loading="loading" class="modern-table">
+        <el-table-column prop="name" :label="t('tokens.tokenName')" min-width="150">
+          <template #default="{ row }">
+            <span class="token-name">{{ row.name }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('common.type')" width="120">
+          <template #default="{ row }">
+            <el-tag :type="row.readonly ? 'info' : 'success'" size="small" effect="light" round>
+              {{ row.readonly ? t('tokens.readonly') : t('nav.packages') }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('tokens.expiresAt')" width="180">
+          <template #default="{ row }">
+            <span v-if="row.expiresAt" class="time-cell">{{ formatDate(row.expiresAt) }}</span>
+            <span v-else class="status-success">{{ t('tokens.neverExpires') }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('tokens.lastUsed')" width="180">
+          <template #default="{ row }">
+            <span v-if="row.lastUsed" class="time-cell">{{ formatDate(row.lastUsed) }}</span>
+            <span v-else class="status-muted">{{ t('tokens.never') }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('common.actions')" width="100" fixed="right">
+          <template #default="{ row }">
+            <el-button type="danger" text size="small" @click="confirmDelete(row)">
+              {{ t('common.delete') }}
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
-    <!-- 创建 Token 对话框 -->
-    <el-dialog v-model="createDialogVisible" title="创建 Token" width="500px">
-      <el-form :model="createForm" label-width="100px">
-        <el-form-item label="名称" required>
-          <el-input v-model="createForm.name" placeholder="如: github-ci" />
-          <div class="form-tip">用于识别 Token 用途的描述性名称</div>
+    <!-- Create Token Dialog -->
+    <el-dialog v-model="createDialogVisible" :title="t('tokens.createToken')" width="480px" class="modern-dialog">
+      <el-form :model="createForm" label-position="top">
+        <el-form-item :label="t('tokens.tokenName')" required>
+          <el-input v-model="createForm.name" placeholder="e.g. production-ci" />
         </el-form-item>
-        <el-form-item label="权限类型">
+        <el-form-item :label="t('common.type')">
           <el-radio-group v-model="createForm.readonly">
-            <el-radio :value="false">可发布</el-radio>
-            <el-radio :value="true">只读</el-radio>
+            <el-radio-button :value="false">{{ t('nav.packages') }}</el-radio-button>
+            <el-radio-button :value="true">{{ t('tokens.readonly') }}</el-radio-button>
           </el-radio-group>
-          <div class="form-tip">
-            只读 Token 只能下载包，不能发布或删除包
-          </div>
         </el-form-item>
-        <el-form-item label="有效期">
-          <el-select v-model="createForm.days" placeholder="选择有效期" style="width: 100%">
-            <el-option label="永不过期" :value="0" />
-            <el-option label="7 天" :value="7" />
-            <el-option label="30 天" :value="30" />
-            <el-option label="90 天" :value="90" />
-            <el-option label="365 天" :value="365" />
+        <el-form-item :label="t('tokens.expiresAt')">
+          <el-select v-model="createForm.days" style="width: 100%">
+            <el-option :label="t('tokens.neverExpires')" :value="0" />
+            <el-option :label="`7 ${t('tokens.days')}`" :value="7" />
+            <el-option :label="`30 ${t('tokens.days')}`" :value="30" />
+            <el-option :label="`90 ${t('tokens.days')}`" :value="90" />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="createDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="createToken" :loading="creating">创建</el-button>
+        <div class="dialog-footer">
+          <el-button @click="createDialogVisible = false">{{ t('common.cancel') }}</el-button>
+          <el-button type="primary" @click="createToken" :loading="creating">{{ t('common.confirm') }}</el-button>
+        </div>
       </template>
     </el-dialog>
 
-    <!-- 显示新创建的 Token -->
-    <el-dialog v-model="showTokenDialog" title="Token 已创建" width="550px" :close-on-click-modal="false">
-      <el-alert type="warning" :closable="false" show-icon style="margin-bottom: 20px">
-        <template #title>
-          <strong>请立即复制 Token</strong>
-        </template>
-        <p style="margin: 8px 0 0 0">Token 只会显示一次，关闭此对话框后将无法再次查看。</p>
-      </el-alert>
+    <!-- New Token Reveal -->
+    <el-dialog v-model="showTokenDialog" :title="t('tokens.tokenCreated')" width="500px" :close-on-click-modal="false" class="modern-dialog">
+      <el-alert :title="t('tokens.tokenWarning')" type="warning" :closable="false" show-icon />
       
-      <div class="token-display">
-        <code>{{ newToken }}</code>
-        <el-button type="primary" size="small" @click="copyToken">
+      <div class="token-reveal-card">
+        <div class="token-value-box">
+          <code>{{ newToken }}</code>
+        </div>
+        <el-button type="primary" @click="copyToken" class="copy-btn">
           <el-icon><DocumentCopy /></el-icon>
-          复制
+          {{ t('tokens.copyToken') }}
         </el-button>
       </div>
 
-      <div class="usage-example">
-        <h4>使用示例</h4>
-        <p>在 CI/CD 环境中配置：</p>
-        <pre v-pre><code># GitHub Actions 示例
-npm config set //your-registry.com/:_authToken ${{ secrets.GRAPE_TOKEN }}</code></pre>
-      </div>
-
       <template #footer>
-        <el-button type="primary" @click="showTokenDialog = false">我已复制，关闭</el-button>
+        <el-button type="primary" @click="showTokenDialog = false" style="width: 100%">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -114,9 +99,12 @@ npm config set //your-registry.com/:_authToken ${{ secrets.GRAPE_TOKEN }}</code>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Delete, DocumentCopy } from '@element-plus/icons-vue'
+import { Plus, DocumentCopy } from '@element-plus/icons-vue'
 import { tokenApi } from '@/api'
+
+const { t } = useI18n()
 
 interface Token {
   id: number
@@ -141,13 +129,8 @@ const createForm = ref({
 })
 
 const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr)
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
+  return new Date(dateStr).toLocaleDateString(undefined, {
+    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
   })
 }
 
@@ -156,8 +139,8 @@ const loadTokens = async () => {
   try {
     const res = await tokenApi.list()
     tokens.value = res.data.objects || []
-  } catch (error) {
-    ElMessage.error('加载 Token 列表失败')
+  } catch {
+    ElMessage.error(t('errors.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -169,11 +152,7 @@ const showCreateDialog = () => {
 }
 
 const createToken = async () => {
-  if (!createForm.value.name.trim()) {
-    ElMessage.warning('请输入 Token 名称')
-    return
-  }
-
+  if (!createForm.value.name.trim()) return
   creating.value = true
   try {
     const res = await tokenApi.create({
@@ -181,142 +160,85 @@ const createToken = async () => {
       readonly: createForm.value.readonly,
       days: createForm.value.days || undefined
     })
-    
     newToken.value = res.data.token
     createDialogVisible.value = false
     showTokenDialog.value = true
     loadTokens()
-  } catch (error: any) {
-    ElMessage.error(error.response?.data?.error || '创建 Token 失败')
+  } catch {
+    ElMessage.error(t('errors.saveFailed'))
   } finally {
     creating.value = false
   }
 }
 
 const copyToken = async () => {
+  const text = newToken.value
   try {
-    await navigator.clipboard.writeText(newToken.value)
-    ElMessage.success('已复制到剪贴板')
+    // 优先使用新 API
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text)
+    } else {
+      // 回退到传统方案
+      const textArea = document.createElement("textarea")
+      textArea.value = text
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+    }
+    ElMessage.success(t('tokens.tokenCopied'))
   } catch {
-    ElMessage.error('复制失败，请手动复制')
+    ElMessage.error('Copy failed')
   }
 }
 
 const confirmDelete = (token: Token) => {
-  ElMessageBox.confirm(
-    `确定要撤销 Token "${token.name}" 吗？撤销后使用该 Token 的 CI/CD 流水线将无法继续工作。`,
-    '撤销 Token',
-    {
-      confirmButtonText: '确定撤销',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(() => {
-    deleteToken(token.id)
-  }).catch(() => {})
-}
-
-const deleteToken = async (id: number) => {
-  try {
-    await tokenApi.delete(id)
-    ElMessage.success('Token 已撤销')
+  ElMessageBox.confirm(`${t('tokens.deleteTokenConfirm')} "${token.name}"?`, t('common.warning'), {
+    confirmButtonText: t('common.delete'),
+    cancelButtonText: t('common.cancel'),
+    type: 'warning'
+  }).then(async () => {
+    await tokenApi.delete(token.id)
+    ElMessage.success(t('tokens.tokenDeleted'))
     loadTokens()
-  } catch (error) {
-    ElMessage.error('撤销 Token 失败')
-  }
+  })
 }
 
-onMounted(() => {
-  loadTokens()
-})
+onMounted(loadTokens)
 </script>
 
 <style scoped>
-.tokens-page {
+.tokens-page { padding: 0; }
+.page-header-modern { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+.subtitle { font-size: 14px; color: var(--g-text-secondary); margin-top: 4px; }
+.token-name { font-weight: 600; color: var(--g-text-primary); }
+.time-cell { font-size: 13px; color: var(--g-text-secondary); }
+.status-success { color: var(--g-success); font-weight: 500; font-size: 13px; }
+.status-muted { color: var(--g-text-muted); font-size: 13px; }
+
+.token-reveal-card {
+  margin-top: 24px;
+  background: var(--g-bg);
   padding: 20px;
-}
-
-.page-header {
-  margin-bottom: 20px;
-}
-
-.page-header h2 {
-  margin: 0 0 8px 0;
-  font-size: 20px;
-  color: #303133;
-}
-
-.page-header .description {
-  margin: 0;
-  color: #909399;
-  font-size: 14px;
-}
-
-.actions {
-  margin-bottom: 16px;
-}
-
-.form-tip {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 4px;
-}
-
-.token-display {
+  border-radius: 16px;
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: #f5f7fa;
-  border-radius: 4px;
-  margin-bottom: 16px;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.token-display code {
-  flex: 1;
-  font-family: 'Monaco', 'Menlo', monospace;
-  font-size: 13px;
-  word-break: break-all;
-  color: #409eff;
-}
-
-.usage-example {
-  background: #fafafa;
-  padding: 12px;
-  border-radius: 4px;
-}
-
-.usage-example h4 {
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  color: #606266;
-}
-
-.usage-example p {
-  margin: 0 0 8px 0;
-  font-size: 13px;
-  color: #909399;
-}
-
-.usage-example pre {
-  margin: 0;
-  padding: 8px;
-  background: #282c34;
-  border-radius: 4px;
+.token-value-box {
+  background: #0f172a;
+  padding: 16px;
+  border-radius: 12px;
   overflow-x: auto;
 }
 
-.usage-example code {
-  font-family: 'Monaco', 'Menlo', monospace;
-  font-size: 12px;
-  color: #abb2bf;
+.token-value-box code {
+  color: #38bdf8;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
 }
 
-.never-expires {
-  color: #67c23a;
-}
-
-.never-used {
-  color: #909399;
-}
+.copy-btn { width: 100%; height: 44px !important; }
+.btn-with-shadow { box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.2); }
 </style>
